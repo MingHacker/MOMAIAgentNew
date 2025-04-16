@@ -3,7 +3,7 @@ from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.encoders import jsonable_encoder
 from pydantic import BaseModel
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional, Literal
 import os
 from supabase import create_client, Client
@@ -12,6 +12,7 @@ import jwt
 from baby_ai_agent import BabyAIAgent
 from contextlib import asynccontextmanager # For lifespan events
 from apscheduler.schedulers.asyncio import AsyncIOScheduler # For background tasks
+from apscheduler.triggers.interval import IntervalTrigger
 
 def serialize_datetime(obj):
     if isinstance(obj, datetime):
@@ -46,7 +47,7 @@ async def lifespan(app: FastAPI):
     # triggering per baby based on activity or using a dedicated task queue.
     scheduler.add_job(
         run_reminder_generation_for_all_babies,
-        trigger=IntervalTrigger(hours=1), # Adjust interval as needed
+        trigger=IntervalTrigger(minutes=10), # Adjust interval as needed
         id="generate_all_reminders",
         replace_existing=True
     )
@@ -66,7 +67,8 @@ app = FastAPI(
     title="BabyAgent API",
     description="API for baby tracking and health predictions",
     version="0.1.0",
-    docs_url="/docs"
+    docs_url="/docs",
+    lifespan=lifespan # Reference the lifespan manager defined above
 )
 
 security = HTTPBearer()
@@ -293,6 +295,41 @@ async def health_check():
         "timestamp": datetime.now().isoformat(),
         "version": "0.1.0"
     }
+
+# --- Background Task Function ---
+async def run_reminder_generation_for_all_babies():
+    """
+    Scheduled task to run reminder generation for all active baby profiles.
+    """
+    print(f"--- Running scheduled reminder generation at {datetime.now(timezone.utc)} ---")
+    try:
+        # Fetch all unique baby IDs (consider filtering for active babies if applicable)
+        result = supabase.table("baby_profiles").select("id").execute()
+        if not result.data:
+            print("No baby profiles found to process.")
+            return
+
+        all_baby_ids = [baby['id'] for baby in result.data]
+        print(f"Found {len(all_baby_ids)} babies to process.")
+
+        processed_count = 0
+        error_count = 0
+        for baby_id in all_baby_ids:
+            try:
+                print(f"Processing reminders for baby: {baby_id}")
+                # Use the globally initialized agent
+                agent.generate_reminders_from_baby_logs(baby_id, datetime.now(timezone.utc))
+                processed_count += 1
+            except Exception as e:
+                error_count += 1
+                print(f"Error processing reminders for baby {baby_id}: {e}")
+                # Decide whether to continue or stop on error
+
+        print(f"--- Scheduled reminder generation complete. Processed: {processed_count}, Errors: {error_count} ---")
+
+    except Exception as e:
+        print(f"Error fetching baby IDs for scheduled task: {e}")
+
 
 if __name__ == "__main__":
     import uvicorn

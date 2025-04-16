@@ -72,7 +72,7 @@ interface ReminderCreate {
   notes?: string;
 }
 
-interface Reminder extends ReminderCreate {
+export interface Reminder extends ReminderCreate {
   id: string;
   is_completed: boolean;
 }

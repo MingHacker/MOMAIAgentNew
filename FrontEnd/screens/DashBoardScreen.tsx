@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback, useEffect } from 'react';
 import { View, Text, ScrollView, StyleSheet, SafeAreaView, ActivityIndicator, TouchableOpacity } from 'react-native';
 import { useFocusEffect, useRoute } from '@react-navigation/native';
@@ -12,7 +11,7 @@ import FeatureCardList from '../components/FeatureCardList';
 
 
 import { getUserFeatures } from '../services/feature';
-import { api } from '../src/api';
+import { api, Reminder } from '../src/api';
 
 import { useApiRequest } from '../services/hooks/useAPIRequest';
 import { usePostRequest } from '../services/hooks/usePostRequest';
@@ -26,12 +25,23 @@ const DashboardScreen = () => {
   const [isLoading, setIsLoading] = useState(true);
 
   const route = useRoute<any>();
-  const userId = route?.params?.userId || '123';
   const [userFeatureIds, setUserFeatureIds] = useState<string[]>([]);
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedType, setSelectedType] = useState<'feed' | 'sleep' | 'diaper' | 'outside' | null>(null);
   const [formData, setFormData] = useState<any>({});
-  const payload = formDataToPayload(selectedType, formData, userId);
+  const [upcomingReminders, setUpcomingReminders] = useState<Reminder[]>([]);
+
+  const fetchReminders = useCallback(async () => {
+    try {
+      if (babyInfo.id) {
+        const reminders = await api.getReminders(babyInfo.id, true);
+        setUpcomingReminders(reminders);
+      }
+    } catch (error) {
+      console.error('Failed to fetch reminders:', error);
+      Toast.show({ type: 'error', text1: '❌ 加载提醒失败' });
+    }
+  }, [babyInfo.id]);
 
   useEffect(() => {
     const fetchBabyData = async () => {
@@ -57,12 +67,13 @@ const DashboardScreen = () => {
     };
 
     fetchBabyData();
-  }, []);
+    fetchReminders();
+  }, [babyInfo.id, fetchReminders]);
 
   console.log('🔥 Dashboard 接收到功能卡片:', userFeatureIds);
   // 加载功能卡片
   const { run: loadFeatures, loading: loadingFeatures } = useApiRequest(
-    () => getUserFeatures(userId),
+    () => getUserFeatures("123"),
     {
       onSuccess: (res: any) => {
         console.log('🔥 Dashboard 接收到功能卡片:', res?.selectedFeatureIds);
@@ -155,6 +166,16 @@ const DashboardScreen = () => {
           }, [])
         ) : (
           <Text style={{ textAlign: 'center', marginTop: 20 }}>暂无功能卡片</Text>
+        )}
+        {upcomingReminders.length > 0 ? (
+          upcomingReminders.map((reminder) => (
+            <FeatureCard
+              key={reminder.id}
+              featureId={reminder.reminder_type}
+            />
+          ))
+        ) : (
+          <Text style={{ textAlign: 'center', marginTop: 20 }}>暂无提醒</Text>
         )}
       </ScrollView>
 

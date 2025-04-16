@@ -15,7 +15,7 @@ class BabyLogCreate(BaseModel):
 
 class ReminderCreate(BaseModel):
     baby_id: str
-    reminder_type: Literal["feed", "diaper", "sleep"]
+    reminder_type: Literal["feeding", "diaper", "sleep"]
     reminder_time: datetime
     notes: Optional[str] = None
 

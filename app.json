@@ -1,0 +1,34 @@
+{
+  "expo": {
+    "name": "mytestapp",
+    "slug": "mytestapp",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.anonymous.mytestapp",
+      "infoPlist": {
+        "NSCameraUsageDescription": "需要使用摄像头上传宝宝图片",
+        "NSPhotoLibraryUsageDescription": "需要访问相册上传宝宝图片"
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      },
+      "package": "com.anonymous.mytestapp"
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    }
+  }
+}

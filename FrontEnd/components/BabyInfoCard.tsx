@@ -1,15 +1,19 @@
 import React from 'react';
 import { View, Text, Image, StyleSheet } from 'react-native';
 
-const BabyInfoCard = ({ userId }) => {
-  const babyInfo = {
-    name: 'Baby Evan',
-    avatar: 'https://www.petlandtexas.com/wp-content/uploads/2016/08/Red_Bunny_Petland_Puppy.jpg',
-    weight: '10kg',
-    height: '81cm',
-    age: '2',
-  };
+interface BabyInfo {
+  name: string;
+  avatar: string;
+  weight: string;
+  height: string;
+  age: string;
+}
 
+interface BabyInfoCardProps {
+  babyInfo: BabyInfo;
+}
+
+const BabyInfoCard: React.FC<BabyInfoCardProps> = ({ babyInfo }) => {
   return (
     <View style={styles.card}>
       <View style={styles.header}>

@@ -1,5 +1,7 @@
+import json
 from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi.encoders import jsonable_encoder
 from pydantic import BaseModel
 from datetime import datetime
 from typing import Optional, Literal
@@ -7,6 +9,11 @@ import os
 from supabase import create_client, Client
 from dotenv import load_dotenv
 import jwt
+
+def serialize_datetime(obj):
+    if isinstance(obj, datetime):
+        return obj.isoformat()
+    raise TypeError ("Type not serializable")
 
 load_dotenv()
 
@@ -28,10 +35,9 @@ supabase: Client = create_client(
 # --- Models ---
 class BabyLogCreate(BaseModel):
     baby_id: str
-    log_type: Literal["feeding", "diaper", "sleep", "cry", "bowel"]
+    log_type: Literal["feeding", "diaper", "sleep", "cry", "bowel", "outside"]
     log_data: dict
-    logged_at: datetime = datetime.now()
-
+    logged_at: datetime
     class Config:
         json_encoders = {
             datetime: lambda v: v.isoformat()
@@ -134,8 +140,7 @@ async def get_all_babies(user_id: str = Depends(get_current_user)):
 async def create_baby_log(log: BabyLogCreate, user_id: str = Depends(get_current_user)):
     await _verify_baby_ownership(log.baby_id, user_id) # Verify ownership first
     try:
-        data = log.dict()
-        # data["user_id"] = user_id # Removed user_id insertion
+        data = jsonable_encoder(log)
         result = supabase.table("baby_logs").insert(data).execute()
         return result.data[0]
     except Exception as e:

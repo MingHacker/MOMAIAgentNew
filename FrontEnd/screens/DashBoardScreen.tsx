@@ -84,17 +84,17 @@ const DashboardScreen = () => {
     async () => {
       if (!selectedType) throw new Error('记录类型为空');
 
-      let logType: 'feeding' | 'diaper' | 'sleep' | 'cry' | 'bowel';
+      let logType: 'feeding' | 'diaper' | 'sleep' | 'cry' | 'bowel' | 'outside';
       switch (selectedType) {
         case 'feed': logType = 'feeding'; break;
         case 'sleep': logType = 'sleep'; break;
         case 'diaper': logType = 'diaper'; break;
-        case 'outside': logType = 'cry'; break; // Assuming 'outside' maps to 'cry'
+        case 'outside': logType = 'outside'; break; // Assuming 'outside' maps to 'cry'
         default: throw new Error('未知记录类型');
       }
 
       const log = {
-        baby_id: userId,
+        baby_id: babyInfo.id,
         log_type: logType,
         log_data: formData,
       };
@@ -135,7 +135,7 @@ const DashboardScreen = () => {
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 100 }}>
-        <BabyInfoCard userId={undefined} />
+        {babyInfo && <BabyInfoCard babyInfo={babyInfo} />}
         <FeatureCardList userFeatureIds={['feed', 'sleep', 'diaper', 'outside']} />
         {userFeatureIds.length > 0 ? (
           userFeatureIds.reduce((rows, _, idx) => {

@@ -1,4 +1,4 @@
-import api from './api';
+import api from '../src/api';
 import type { RecordType } from './types/record_type';
 
 // ========== 提交记录接口 ==========

@@ -1,4 +1,4 @@
-import api from './api';
+import api from '../src/api';
 
 // 保存用户选择的功能卡片（比如 feed/sleep 等）
 export const saveUserFeatures = (data: {

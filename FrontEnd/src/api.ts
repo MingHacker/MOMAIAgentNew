@@ -1,10 +1,10 @@
 import axios, { AxiosError, AxiosResponse } from 'axios';
 import { DateTime } from 'luxon';
-import { supabase } from '../utils/supabaseClient'
+import { supabase } from './supabaseClient'
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Base API configuration
-const API_BASE_URL = 'http://192.168.56.1:8000';
+const API_BASE_URL = 'http://10.0.0.137:8000';
 const axiosInstance = axios.create({
   baseURL: API_BASE_URL,
   headers: {

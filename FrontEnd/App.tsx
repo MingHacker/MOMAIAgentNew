@@ -1,4 +1,4 @@
-import { api } from './services/api';
+import { api } from './src/api';
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';

@@ -7,7 +7,7 @@ import {
   StyleSheet,
   Alert
 } from 'react-native';
-import { api } from '../services/api';
+import { api } from '../src/api';
 import { useAuth } from '../App';
 
 export default function LoginScreen() {

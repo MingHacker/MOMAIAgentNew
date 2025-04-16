@@ -1,4 +1,4 @@
-import api from './api';
+import api from '../src/api';
 
 // 保存宝宝信息
 export const saveBabyInfo = (data: {

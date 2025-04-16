@@ -1,4 +1,4 @@
-import api from './api';
+import api from '../src/api';
 
 // 获取宝宝的健康总结（调用 GPT）
 export const getBabySummary = (userId: string) =>

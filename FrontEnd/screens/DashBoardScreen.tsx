@@ -1,5 +1,5 @@
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { View, Text, ScrollView, StyleSheet, SafeAreaView, ActivityIndicator, TouchableOpacity } from 'react-native';
 import { useFocusEffect, useRoute } from '@react-navigation/native';
 import Toast from 'react-native-toast-message';
@@ -12,22 +12,53 @@ import FeatureCardList from '../components/FeatureCardList';
 
 
 import { getUserFeatures } from '../services/feature';
-import { api } from '../services/api';
+import { api } from '../src/api';
 
 import { useApiRequest } from '../services/hooks/useAPIRequest';
 import { usePostRequest } from '../services/hooks/usePostRequest';
 import { validateFormData } from '../utils/validateForms';
 import { formDataToPayload } from '../utils/formPayload';
+import { BabyInfo, mapBabyProfileToBabyInfo } from '../src/mappers'; // Import mapper and BabyInfo type
 
 const DashboardScreen = () => {
+
+  const [babyInfo, setBabyInfo] = useState<BabyInfo | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
   const route = useRoute<any>();
   const userId = route?.params?.userId || '123';
-
   const [userFeatureIds, setUserFeatureIds] = useState<string[]>([]);
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedType, setSelectedType] = useState<'feed' | 'sleep' | 'diaper' | 'outside' | null>(null);
   const [formData, setFormData] = useState<any>({});
   const payload = formDataToPayload(selectedType, formData, userId);
+
+  useEffect(() => {
+    const fetchBabyData = async () => {
+      setIsLoading(true);
+      try {
+        const babies = await api.getAllBabies();
+        if (babies && babies.length > 0) {
+          // Assuming we display the first baby for now
+          const mappedInfo = mapBabyProfileToBabyInfo(babies[0]);
+          setBabyInfo(mappedInfo);
+        } else {
+          // Handle case with no babies - maybe set a default state or show a message
+          setBabyInfo(mapBabyProfileToBabyInfo(null)); // Use mapper's null handling
+          console.log('No baby profiles found for this user.');
+        }
+      } catch (error) {
+        console.error('Failed to fetch baby data:', error);
+        // Optionally set an error state to display to the user
+        setBabyInfo(mapBabyProfileToBabyInfo(null)); // Show default on error
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchBabyData();
+  }, []);
+
   console.log('🔥 Dashboard 接收到功能卡片:', userFeatureIds);
   // 加载功能卡片
   const { run: loadFeatures, loading: loadingFeatures } = useApiRequest(

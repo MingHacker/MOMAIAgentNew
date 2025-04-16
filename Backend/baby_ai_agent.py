@@ -4,9 +4,7 @@ from typing import List, Dict, Any
 from supabase import Client, create_client
 from dotenv import load_dotenv
 
-# Import models from the dedicated models file
-from main import ReminderCreate, BabyLogCreate
-
+from models import ReminderCreate, BabyLogCreate
 
 load_dotenv()
 

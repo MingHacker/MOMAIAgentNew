@@ -9,6 +9,9 @@ import os
 from supabase import create_client, Client
 from dotenv import load_dotenv
 import jwt
+from baby_ai_agent import BabyAIAgent
+from contextlib import asynccontextmanager # For lifespan events
+from apscheduler.schedulers.asyncio import AsyncIOScheduler # For background tasks
 
 def serialize_datetime(obj):
     if isinstance(obj, datetime):
@@ -16,6 +19,48 @@ def serialize_datetime(obj):
     raise TypeError ("Type not serializable")
 
 load_dotenv()
+
+# --- Global Variables (Initialized in Lifespan) ---
+supabase: Client = None
+agent: BabyAIAgent = None
+scheduler: AsyncIOScheduler = None
+
+# --- Lifespan Management (Define BEFORE app instantiation) ---
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup: Initialize Supabase client, Agent, and Scheduler
+    global supabase, agent, scheduler
+    print("Starting up application...")
+    supabase_url = os.getenv("SUPABASE_URL")
+    supabase_key = os.getenv("SUPABASE_KEY")
+    if not supabase_url or not supabase_key:
+        raise RuntimeError("SUPABASE_URL and SUPABASE_KEY must be set in environment variables.")
+    
+    supabase = create_client(supabase_url, supabase_key)
+    agent = BabyAIAgent(supabase)
+    
+    # Initialize and start the scheduler
+    scheduler = AsyncIOScheduler(timezone="UTC") # Use UTC for consistency
+    # Add the job to run reminder generation periodically (e.g., every hour)
+    # Note: This runs for *all* babies. A more scalable approach might involve
+    # triggering per baby based on activity or using a dedicated task queue.
+    scheduler.add_job(
+        run_reminder_generation_for_all_babies,
+        trigger=IntervalTrigger(hours=1), # Adjust interval as needed
+        id="generate_all_reminders",
+        replace_existing=True
+    )
+    scheduler.start()
+    print("Scheduler started.")
+    
+    yield # Application runs here
+
+    # Shutdown: Stop the scheduler
+    print("Shutting down application...")
+    if scheduler and scheduler.running:
+        scheduler.shutdown()
+        print("Scheduler shut down.")
+
 
 app = FastAPI(
     title="BabyAgent API",

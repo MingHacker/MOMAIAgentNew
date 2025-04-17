@@ -1,13 +1,13 @@
 // utils/validateForms.ts
 
 export function validateFormData(
-    type: 'feed' | 'sleep' | 'diaper' | 'outside' | null,
+    type: 'feeding' | 'sleep' | 'diaper' | 'outside' | null,
     data: any
   ): boolean {
     if (!type) return false;
   
     switch (type) {
-      case 'feed':
+      case 'feeding':
         return !!data.feedTime && !!data.feedAmount;
   
       case 'sleep':

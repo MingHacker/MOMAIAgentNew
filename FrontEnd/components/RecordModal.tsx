@@ -20,7 +20,7 @@ const RecordModal = ({
 
           {/* 类型选择按钮 */}
           <View style={styles.typeSelectorRow}>
-            {['feed', 'sleep', 'diaper', 'outside'].map((type) => (
+            {['feeding', 'sleep', 'diaper', 'outside'].map((type) => (
               <TouchableOpacity
                 key={type}
                 onPress={() => setSelectedType(type)}

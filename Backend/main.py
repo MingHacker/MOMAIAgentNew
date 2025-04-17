@@ -129,6 +129,10 @@ class HealthPredictionCreate(BaseModel):
     description: str
     recommended_action: dict
 
+class CompleteReminderByLog(BaseModel):
+    baby_id: str
+    log_type: str
+
 # --- Authentication ---
 async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
     try:
@@ -276,7 +280,7 @@ async def get_reminders(
     await _verify_baby_ownership(baby_id, user_id) # Verify ownership first
     try:
         # query = supabase.table("reminders").select("*").eq("baby_id", baby_id).eq("user_id", user_id) # Removed user_id filter
-        query = supabase.table("reminders").select("*").eq("baby_id", baby_id)
+        query = supabase.table("reminders").select("*").eq("baby_id", baby_id).eq("is_completed", False)
         
         if upcoming:
             query = query.gt("reminder_time", datetime.now().isoformat())
@@ -296,6 +300,35 @@ async def create_prediction(prediction: HealthPredictionCreate, user_id: str = D
         return result.data[0]
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+@app.post("/reminders/complete_by_log")
+async def complete_reminder_by_log(reminderbylog:CompleteReminderByLog, user_id: str = Depends(get_current_user)):
+    """Completes a reminder based on the baby_id and log_type."""
+    await _verify_baby_ownership(reminderbylog.baby_id, user_id)
+    try:
+        # Map log_type to reminder_type
+        reminder_type = reminderbylog.log_type
+
+        # Find the first uncompleted reminder of the given type for the baby
+        reminder_data = supabase.table("reminders").select("id").eq("baby_id", reminderbylog.baby_id).eq("reminder_type", reminder_type).eq("is_completed", False).limit(1).execute()
+
+        if not reminder_data.data:
+            return {"message": "No matching uncompleted reminder found."}
+
+        reminder_id = reminder_data.data[0]["id"]
+
+        # Mark the reminder as completed
+        result = supabase.table("reminders").update({"is_completed": True}).eq("id", reminder_id).execute()
+
+        if result.data:
+            return {"message": f"Reminder with id {reminder_id} completed successfully."}
+        else:
+            return {"message": "Reminder status updated or was already complete."}
+
+    except HTTPException as http_exc:
+        raise http_exc
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 @app.get("/health", include_in_schema=False)
 async def health_check():

@@ -19,7 +19,7 @@ app.post('/api/submitUserInfo', (req, res) => {
 });
 const featureRecommendationsByAge = {
   '0-12': [
-    { id: 'feed', title: '喂奶' },
+    { id: 'feeding', title: '喂奶' },
     { id: 'sleep', title: '睡觉' },
     { id: 'outside', title: '晒太阳' },
     { id: 'diaper', title: '换尿布' },
@@ -75,7 +75,7 @@ app.get('/api/recommendFeatures', (req, res) => {
 
 // ✅ 保存用户选择功能
 const userFeaturesMap = {
-  '123': ['feed', 'diaper', 'sleep', 'outside', 'VitaminD', 'exercise', 'play', 'music', 'talking', 'bath', 'reading'],
+  '123': ['feeding', 'diaper', 'sleep', 'outside', 'VitaminD', 'exercise', 'play', 'music', 'talking', 'bath', 'reading'],
   '456': ['outside','VitaminD', 'exercise', 'play', 'music', 'talking', 'bath', 'reading'],
 };
 

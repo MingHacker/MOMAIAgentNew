@@ -3,7 +3,6 @@ import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import FeatureCard from './FeatureCard'; // Ensure the import is correct
 
-//const sampleFeatures = ['feed', 'sleep', 'diaper', 'outside'];
 
 const FeatureCardList = ({ userFeatureIds}: { userFeatureIds: string[] }) => {
   return (

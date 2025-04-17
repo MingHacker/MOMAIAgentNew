@@ -1,7 +1,7 @@
 import dayjs from 'dayjs';
 
 export const formDataToPayload = (
-  type: 'feed' | 'sleep' | 'diaper' | 'outside',
+  type: 'feeding' | 'sleep' | 'diaper' | 'outside',
   formData: any,
   userId: string
 ) => {
@@ -14,7 +14,7 @@ export const formDataToPayload = (
   };
 
   switch (type) {
-    case 'feed':
+    case 'feeding':
       return {
         ...base,
         feed_times: [{

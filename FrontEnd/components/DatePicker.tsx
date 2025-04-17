@@ -53,7 +53,7 @@ const FormFields = ({ selectedType }) => {
 
   const renderFormFields = () => {
     switch (selectedType) {
-      case 'feed':
+      case 'feeding':
         return (
           <>
             <Text style={styles.formLabel}>Feed Time</Text>

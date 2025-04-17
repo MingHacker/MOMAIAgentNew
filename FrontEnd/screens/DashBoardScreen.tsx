@@ -27,7 +27,7 @@ const DashboardScreen = () => {
   const route = useRoute<any>();
   const [userFeatureIds, setUserFeatureIds] = useState<string[]>([]);
   const [modalVisible, setModalVisible] = useState(false);
-  const [selectedType, setSelectedType] = useState<'feed' | 'sleep' | 'diaper' | 'outside' | null>(null);
+  const [selectedType, setSelectedType] = useState<'feeding' | 'sleep' | 'diaper' | 'outside' | null>(null);
   const [formData, setFormData] = useState<any>({});
   const [upcomingReminders, setUpcomingReminders] = useState<Reminder[]>([]);
 
@@ -98,7 +98,7 @@ const DashboardScreen = () => {
 
       let logType: 'feeding' | 'diaper' | 'sleep' | 'cry' | 'bowel';
       switch (selectedType) {
-        case 'feed': logType = 'feeding'; break;
+        case 'feeding': logType = 'feeding'; break;
         case 'sleep': logType = 'sleep'; break;
         case 'diaper': logType = 'diaper'; break;
         case 'outside': logType = 'cry'; break;
@@ -118,6 +118,7 @@ const DashboardScreen = () => {
         Toast.show({ type: 'success', text1: '✅ 记录成功' });
         setModalVisible(false);
         setFormData({});
+        completeRelatedReminder(babyInfo.id, selectedType);
       },
       onError: (err) => {
         console.error('提交出错：', err);
@@ -126,6 +127,18 @@ const DashboardScreen = () => {
       debounceTime: 1500,
     }
   );
+
+  const completeRelatedReminder = async (babyId: string, logType: string) => {
+    try {
+      const response = await api.completeReminderByLog(babyId, logType);
+      if (response.message) {
+        console.log(response.message);
+      }
+    } catch (error) {
+      console.error('Failed to complete reminder:', error);
+      Toast.show({ type: 'error', text1: '❌ 完成提醒失败' });
+    }
+  };
 
   const submitRecord = () => {
     if (!validateFormData(selectedType, formData)) {
@@ -148,7 +161,6 @@ const DashboardScreen = () => {
     <SafeAreaView style={styles.safeArea}>
       <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 100 }}>
         {babyInfo && <BabyInfoCard babyInfo={babyInfo} />}
-        {/* <FeatureCardList userFeatureIds={['feed', 'sleep', 'diaper', 'outside']} /> */}
         {upcomingReminders.length > 0 ? (
           upcomingReminders.reduce((rows, reminder, index) => {
             if (index % 2 === 0) {

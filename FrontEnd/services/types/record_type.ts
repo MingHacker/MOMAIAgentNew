@@ -1,5 +1,5 @@
 export type RecordType =
-  | 'feed'
+  | 'feeding'
   | 'sleep'
   | 'diaper'
   | 'outside'

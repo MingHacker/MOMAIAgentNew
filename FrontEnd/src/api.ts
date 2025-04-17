@@ -63,7 +63,7 @@ interface BabyLog extends BabyLogCreate {
   id: string;
 }
 
-type ReminderType = 'feed' | 'diaper' | 'sleep';
+type ReminderType = 'feeding' | 'diaper' | 'sleep';
 
 interface ReminderCreate {
   baby_id: string;
@@ -238,6 +238,18 @@ export const api = {
           baby_id: babyId,
           upcoming: upcomingOnly
         }
+      });
+      return response.data;
+    } catch (error) {
+      handleApiError(error);
+    }
+  },
+
+  completeReminderByLog: async (babyId: string, logType: string): Promise<{ message: string }> => {
+    try {
+      const response = await axiosInstance.post<{ message: string }>('/reminders/complete_by_log', {
+        baby_id: babyId,
+        log_type: logType,
       });
       return response.data;
     } catch (error) {

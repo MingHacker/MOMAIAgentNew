@@ -45,7 +45,7 @@ const RecommendedFeaturesScreen = () => {
         setSelectedFeatures(saved);
       } else {
         const defaultSelected = featureList
-          .filter((item) => ['feed', 'sleep', 'diaper', 'outside'].includes(item.id))
+          .filter((item) => ['feeding', 'sleep', 'diaper', 'outside'].includes(item.id))
           .map((item) => item.id);
         setSelectedFeatures(defaultSelected);
       }

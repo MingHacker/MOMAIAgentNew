@@ -35,7 +35,7 @@ export const getTodayRecordsByType = (userId: string, type: RecordType) =>
 // ========== 一次查全部 ==========
 export const getTodayAllRecords = async (userId: string) => {
   const types: RecordType[] = [
-    'feed', 'sleep', 'diaper', 'outside',
+    'feeding', 'sleep', 'diaper', 'outside',
     'nap', 'exercise', 'music', 'talking', 'vitaminD',
   ];
 

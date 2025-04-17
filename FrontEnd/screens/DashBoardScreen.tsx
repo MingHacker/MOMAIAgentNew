@@ -96,12 +96,12 @@ const DashboardScreen = () => {
     async () => {
       if (!selectedType) throw new Error('记录类型为空');
 
-      let logType: 'feeding' | 'diaper' | 'sleep' | 'cry' | 'bowel' | 'outside';
+      let logType: 'feeding' | 'diaper' | 'sleep' | 'cry' | 'bowel';
       switch (selectedType) {
         case 'feed': logType = 'feeding'; break;
         case 'sleep': logType = 'sleep'; break;
         case 'diaper': logType = 'diaper'; break;
-        case 'outside': logType = 'outside'; break; // Assuming 'outside' maps to 'cry'
+        case 'outside': logType = 'cry'; break;
         default: throw new Error('未知记录类型');
       }
 
@@ -148,31 +148,13 @@ const DashboardScreen = () => {
     <SafeAreaView style={styles.safeArea}>
       <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 100 }}>
         {babyInfo && <BabyInfoCard babyInfo={babyInfo} />}
-        <FeatureCardList userFeatureIds={['feed', 'sleep', 'diaper', 'outside']} />
-        {userFeatureIds.length > 0 ? (
-          userFeatureIds.reduce((rows, _, idx) => {
-            if (idx % 2 === 0) {
-              const first = <FeatureCard featureId={userFeatureIds[idx]} key={`${idx}-1`} />;
-              const second = userFeatureIds[idx + 1]
-                ? <FeatureCard featureId={userFeatureIds[idx + 1]} key={`${idx}-2`} />
-                : <View style={{ width: '48%' }} />;
-              rows.push(
-                <View style={styles.cardRow} key={idx}>
-                  {first}
-                  {second}
-                </View>
-              );
-            }
-            return rows;
-          }, [])
-        ) : (
-          <Text style={{ textAlign: 'center', marginTop: 20 }}>暂无功能卡片</Text>
-        )}
+        {/* <FeatureCardList userFeatureIds={['feed', 'sleep', 'diaper', 'outside']} /> */}
         {upcomingReminders.length > 0 ? (
           upcomingReminders.map((reminder) => (
             <FeatureCard
               key={reminder.id}
               featureId={reminder.reminder_type}
+              reminderTime={reminder.reminder_time}
             />
           ))
         ) : (

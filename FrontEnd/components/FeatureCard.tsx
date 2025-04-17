@@ -1,13 +1,18 @@
 // FeatureCard.tsx
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import dayjs from 'dayjs';
+import relativeTime from 'dayjs/plugin/relativeTime';
+dayjs.extend(relativeTime);
 
 type FeatureCardProps = {
   featureId: string | { id: string; title?: string };
+  reminderTime?: string;
 };
 
-const FeatureCard = ({ featureId }: FeatureCardProps) => {
+const FeatureCard = ({ featureId, reminderTime }: FeatureCardProps) => {
   let displayText = '';
+  let timeDiffText = '';
 
   if (typeof featureId === 'string') {
     displayText = featureId;
@@ -15,9 +20,15 @@ const FeatureCard = ({ featureId }: FeatureCardProps) => {
     displayText = featureId.title || featureId.id;
   }
 
+  if (reminderTime) {
+    const reminderDateTime = dayjs(reminderTime);
+    timeDiffText = reminderDateTime.fromNow();
+  }
+
   return (
     <View style={styles.card}>
       <Text style={styles.text}>{displayText}</Text>
+      {timeDiffText ? <Text style={styles.time}>{timeDiffText}</Text> : null}
     </View>
   );
 };
@@ -40,6 +51,11 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: '#4B5563',
+  },
+  time: {
+    fontSize: 12,
+    color: '#717171',
+    marginTop: 4,
   },
 });
 

@@ -150,13 +150,27 @@ const DashboardScreen = () => {
         {babyInfo && <BabyInfoCard babyInfo={babyInfo} />}
         {/* <FeatureCardList userFeatureIds={['feed', 'sleep', 'diaper', 'outside']} /> */}
         {upcomingReminders.length > 0 ? (
-          upcomingReminders.map((reminder) => (
-            <FeatureCard
-              key={reminder.id}
-              featureId={reminder.reminder_type}
-              reminderTime={reminder.reminder_time}
-            />
-          ))
+          upcomingReminders.reduce((rows, reminder, index) => {
+            if (index % 2 === 0) {
+              rows.push(
+                <View style={styles.cardRow} key={index}>
+                  <FeatureCard
+                    key={reminder.id}
+                    featureId={reminder.reminder_type}
+                    reminderTime={reminder.reminder_time}
+                  />
+                  {upcomingReminders[index + 1] ? (
+                    <FeatureCard
+                      key={upcomingReminders[index + 1].id}
+                      featureId={upcomingReminders[index + 1].reminder_type}
+                      reminderTime={upcomingReminders[index + 1].reminder_time}
+                    />
+                  ) : null}
+                </View>
+              );
+            }
+            return rows;
+          }, [])
         ) : (
           <Text style={{ textAlign: 'center', marginTop: 20 }}>暂无提醒</Text>
         )}

@@ -86,9 +86,9 @@ class BabyAIAgent:
 
         # Define typical intervals (these should ideally be configurable per baby)
         intervals = {
-            "feeding": timedelta(minutes=3),
-            "diaper": timedelta(minutes=2),
-            "sleep": timedelta(minutes=4) # Time since last *waking up*
+            "feeding": timedelta(hours=3),
+            "diaper": timedelta(hours=2),
+            "sleep": timedelta(hours=8) # Time since last *waking up*
         }
 
         # Generate reminders if interval has passed since last log
@@ -104,7 +104,7 @@ class BabyAIAgent:
                     last_time = last_time.replace(tzinfo=timezone.utc) # Assume UTC if naive
                 
                 next_expected_time = last_time + interval
-                if current_time >= next_expected_time:
+                if current_time >= last_time: 
                     # Check if a similar reminder already exists and is not completed
                     existing_reminder = self._check_existing_reminder(baby_id, reminder_type, next_expected_time)
                     if not existing_reminder:

@@ -31,17 +31,18 @@ const DashboardScreen = () => {
   const [formData, setFormData] = useState<any>({});
   const [upcomingReminders, setUpcomingReminders] = useState<Reminder[]>([]);
 
-  const fetchReminders = useCallback(async () => {
+  const fetchReminders = useCallback(async (babyId: string | null) => {
     try {
-      if (babyInfo.id) {
-        const reminders = await api.getReminders(babyInfo.id, true);
+      if (babyId) {
+        const reminders = await api.getReminders(babyId, true);
+        console.log(reminders)
         setUpcomingReminders(reminders);
       }
     } catch (error) {
       console.error('Failed to fetch reminders:', error);
       Toast.show({ type: 'error', text1: '❌ 加载提醒失败' });
     }
-  }, [babyInfo.id]);
+  }, []);
 
   useEffect(() => {
     const fetchBabyData = async () => {
@@ -52,6 +53,7 @@ const DashboardScreen = () => {
           // Assuming we display the first baby for now
           const mappedInfo = mapBabyProfileToBabyInfo(babies[0]);
           setBabyInfo(mappedInfo);
+          fetchReminders(mappedInfo.id);
         } else {
           // Handle case with no babies - maybe set a default state or show a message
           setBabyInfo(mapBabyProfileToBabyInfo(null)); // Use mapper's null handling
@@ -67,8 +69,7 @@ const DashboardScreen = () => {
     };
 
     fetchBabyData();
-    fetchReminders();
-  }, [babyInfo.id, fetchReminders]);
+  }, [fetchReminders]);
 
   console.log('🔥 Dashboard 接收到功能卡片:', userFeatureIds);
   // 加载功能卡片
@@ -87,7 +88,7 @@ const DashboardScreen = () => {
   useFocusEffect(
     useCallback(() => {
       loadFeatures();
-    }, [userId, loadFeatures])
+    }, ["123", loadFeatures])
   );
 
   // 提交记录

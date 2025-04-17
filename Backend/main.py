@@ -1,5 +1,6 @@
 import json
 from fastapi import FastAPI, Depends, HTTPException, status
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.encoders import jsonable_encoder
 from pydantic import BaseModel
@@ -47,7 +48,7 @@ async def lifespan(app: FastAPI):
     # triggering per baby based on activity or using a dedicated task queue.
     scheduler.add_job(
         run_reminder_generation_for_all_babies,
-        trigger=IntervalTrigger(minutes=10), # Adjust interval as needed
+        trigger=IntervalTrigger(seconds=10), # Adjust interval as needed
         id="generate_all_reminders",
         replace_existing=True
     )
@@ -69,6 +70,15 @@ app = FastAPI(
     version="0.1.0",
     docs_url="/docs",
     lifespan=lifespan # Reference the lifespan manager defined above
+)
+
+# CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:8081", "http://10.0.0.23:8081","http://10.0.0.137:8081"],  # Allows specific origins
+    allow_credentials=True,
+    allow_methods=["*"],  # Allows all methods
+    allow_headers=["*"],  # Allows all headers
 )
 
 security = HTTPBearer()

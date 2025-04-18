@@ -1,26 +1,55 @@
 # ✅ 只保留以下内容：
 
-from fastapi import APIRouter, Query, Depends
+import os
+from fastapi import APIRouter, Query, Depends, HTTPException, status
 from pydantic import BaseModel
-from sqlalchemy.orm import Session
 from agents.babymanager.schema import BabyAgentState
 from agents.babymanager.graph import build_baby_manager_graph
-from models.db import get_db
-from models.record_data import FeedRecord, SleepRecord, DiaperRecord, OutsideRecord
 from datetime import datetime, timedelta
 from typing import Dict, List
+from supabase import create_client, Client
+from dotenv import load_dotenv
+import jwt
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+
+load_dotenv()
+
+supabase_url = os.getenv("SUPABASE_URL")
+supabase_key = os.getenv("SUPABASE_KEY")
+
+supabase: Client = create_client(supabase_url, supabase_key)
 
 router = APIRouter()
+
+security = HTTPBearer()
+
+async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    try:
+        token = credentials.credentials
+        decoded = jwt.decode(
+            token,
+            os.getenv("SUPABASE_KEY"),
+            algorithms=["HS256"],
+            audience="authenticated",
+            issuer=f"{os.getenv('SUPABASE_URL')}/auth/v1",
+            options={"verify_signature": False}
+        )
+        return decoded["sub"]
+    except jwt.PyJWTError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid authentication credentials",
+        )
 
 class BabyAnalysisResponse(BaseModel):
     summary: str
     next_action: str
     
 @router.post("/api/analysis/baby/langgraph", operation_id="analyze_baby_graph_v1")
-def analyze_baby_via_graph(userId: str = Query(...), db: Session = Depends(get_db)):
+async def analyze_baby_via_graph(user_id: str = Depends(get_current_user)):
     state = BabyAgentState(
-        user_id=userId,
-        db=db,
+        user_id=user_id,
+        db=supabase,
         records={},
         analysis="",
         next_action="",
@@ -40,21 +69,27 @@ def analyze_baby_via_graph(userId: str = Query(...), db: Session = Depends(get_d
     }
 
 @router.get("/api/baby/summary/daily")
-def get_baby_daily_summary(userId: str = Query(...), db: Session = Depends(get_db)) -> Dict:
+async def get_baby_daily_summary(user_id: str = Depends(get_current_user)) -> Dict:
     today = datetime.now().date()
     start = datetime.combine(today, datetime.min.time())
     end = datetime.combine(today, datetime.max.time())
 
-    feed_records = db.query(FeedRecord).filter(FeedRecord.user_id == userId, FeedRecord.time.between(start, end)).all()
-    sleep_records = db.query(SleepRecord).filter(SleepRecord.user_id == userId, SleepRecord.start.between(start, end)).all()
-    diaper_records = db.query(DiaperRecord).filter(DiaperRecord.user_id == userId, DiaperRecord.time.between(start, end)).all()
-    outside_records = db.query(OutsideRecord).filter(OutsideRecord.user_id == userId, OutsideRecord.start.between(start, end)).all()
+    # Use Supabase to fetch the data
+    feed_records_response = supabase.table("baby_logs").select("*").eq("baby_id", user_id).eq("log_type", "feeding").gte("logged_at", start.isoformat()).lte("logged_at", end.isoformat()).execute()
+    sleep_records_response = supabase.table("baby_logs").select("*").eq("baby_id", user_id).eq("log_type", "sleep").gte("logged_at", start.isoformat()).lte("logged_at", end.isoformat()).execute()
+    diaper_records_response = supabase.table("baby_logs").select("*").eq("baby_id", user_id).eq("log_type", "diaper").gte("logged_at", start.isoformat()).lte("logged_at", end.isoformat()).execute()
+    outside_records_response = supabase.table("baby_logs").select("*").eq("baby_id", user_id).eq("log_type", "outside").gte("logged_at", start.isoformat()).lte("logged_at", end.isoformat()).execute()
 
-    feed_data = {r.time.strftime("%H:%M"): r.amount for r in feed_records}
-    sleep_data = {r.start.strftime("%H:%M"): (r.end - r.start).seconds // 60 for r in sleep_records}
-    diaper_poop_count = sum(1 for r in diaper_records if r.poop)
+    feed_records = feed_records_response.data
+    sleep_records = sleep_records_response.data
+    diaper_records = diaper_records_response.data
+    outside_records = outside_records_response.data
+
+    feed_data = {datetime.fromisoformat(r["logged_at"]).strftime("%H:%M"): r["log_data"]["amount"] for r in feed_records}
+    sleep_data = {datetime.fromisoformat(r["logged_at"]).strftime("%H:%M"): r["log_data"]["duration"] for r in sleep_records}
+    diaper_poop_count = sum(1 for r in diaper_records if r["log_data"].get("poop", False))
     diaper_total = len(diaper_records)
-    outside_minutes = sum((r.end - r.start).seconds for r in outside_records) // 60
+    outside_minutes = sum(r["log_data"]["duration"] for r in outside_records)
 
     return {
         "feed_graph": feed_data,
@@ -65,7 +100,7 @@ def get_baby_daily_summary(userId: str = Query(...), db: Session = Depends(get_d
     }
 
 @router.get("/api/baby/summary/weekly")
-def get_baby_summary_weekly(userId: str = Query(...), db: Session = Depends(get_db)) -> Dict[str, List]:
+def get_baby_summary_weekly(user_id: str = Depends(get_current_user)) -> Dict[str, List]:
     today = datetime.now()
     labels = [(today - timedelta(days=i)).strftime('%a') for i in reversed(range(7))]
 

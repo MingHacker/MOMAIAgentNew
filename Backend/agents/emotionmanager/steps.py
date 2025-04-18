@@ -1,6 +1,6 @@
 # -------- steps.py --------
 
-from langchain.chat_models import ChatOpenAI
+from langchain_openai import ChatOpenAI
 from jinja2 import Template
 from .prompts import HEADER_PROMPT
 from .schema import Metrics, CompanionHeader

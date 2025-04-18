@@ -57,7 +57,7 @@ async def lifespan(app: FastAPI):
     # triggering per baby based on activity or using a dedicated task queue.
     scheduler.add_job(
         run_reminder_generation_for_all_babies,
-        trigger=IntervalTrigger(seconds=10), # Adjust interval as needed
+        trigger=IntervalTrigger(minutes=10), # Adjust interval as needed
         id="generate_all_reminders",
         replace_existing=True
     )

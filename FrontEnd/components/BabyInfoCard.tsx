@@ -14,6 +14,7 @@ interface BabyInfoCardProps {
 }
 
 const BabyInfoCard: React.FC<BabyInfoCardProps> = ({ babyInfo }) => {
+  babyInfo.avatar = 'https://www.petlandtexas.com/wp-content/uploads/2016/08/Red_Bunny_Petland_Puppy.jpg'; // Fallback to a default avatar if none is provided
   return (
     <View style={styles.card}>
       <View style={styles.header}>

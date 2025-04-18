@@ -2,17 +2,17 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from uuid import UUID
 
 from agents.emotion_manager import EmotionManager
-from agents.baby_manager import BabyManager
-from agents.mom_manager import MomManager
-from agents.task_manager import TaskManager
+from agents.baby_manager import get_baby_health_today
+from agents.mom_manager import get_mom_health_today
+#from agents.task_manager import get_task_today
 #from agents.health_analytics import HealthAnalytics
 
 router = APIRouter()
 
 _emotion_manager = EmotionManager(
-    BabyManager(),
-    MomManager(),
-    TaskManager(),
+    get_baby_health_today,
+    get_mom_health_today,
+    #get_task_today,
     #HealthAnalytics(),
 )
 

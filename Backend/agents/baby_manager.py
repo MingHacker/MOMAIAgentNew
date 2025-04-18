@@ -41,7 +41,7 @@ def call_gpt_baby_analysis(data: dict) -> BabyAnalysisResponse:
         next_action=parts[1].strip() if len(parts) > 1 else ""
     )
 
-def call_gpt_baby_analysis(data: dict) -> str:
+def call_gpt_baby_analysis_str(data: dict) -> str:
     """
     用于 GPT 分析妈妈健康状况，返回 summary 文本（用于 /api/mom/summary）
     """
@@ -51,4 +51,14 @@ def call_gpt_baby_analysis(data: dict) -> str:
         messages=[{"role": "user", "content": prompt}]
     )
     return response.choices[0].message.content
+
+class BabyManager:
+    def __init__(self, db: Session):
+        self.db = db
+
+    def get_baby_health_today(self, user_id: str):
+        return get_baby_health_today(user_id, self.db)
+
+    def analyze_baby_health(self, data: dict) -> BabyAnalysisResponse:
+        return call_gpt_baby_analysis(data)
 

@@ -16,6 +16,14 @@ from contextlib import asynccontextmanager # For lifespan events
 from apscheduler.schedulers.asyncio import AsyncIOScheduler # For background tasks
 from apscheduler.triggers.interval import IntervalTrigger
 
+from agents.baby_manager import get_baby_health_today, call_gpt_baby_analysis
+from agents.mom_manager import get_mom_health_today, call_gpt_mom_analysis
+
+from api.mom import router as mom_router
+from api.task import router as task_router
+from api.baby import router as baby_router
+from api.emotion import router as emotion_router
+
 def serialize_datetime(obj):
     if isinstance(obj, datetime):
         return obj.isoformat()
@@ -377,11 +385,12 @@ async def run_reminder_generation_for_all_babies():
 
 # --- Agent backend ---
 
-from agents.baby_manager import get_baby_health_today, call_gpt_baby_analysis
-from agents.mom_manager import get_mom_health_today, call_gpt_mom_analysis
-from api.mom import router as mom_router
-from api.task import router as task_router
-from api.baby import router as baby_router
+app.include_router(mom_router)
+app.include_router(baby_router)
+app.include_router(task_router)
+app.include_router(emotion_router)
+
+
 
 # CORS 中间件配置
 app.add_middleware(

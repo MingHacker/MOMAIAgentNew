@@ -1,5 +1,5 @@
 from .schema import BabyAgentState
-from agents.baby_manager import get_today_records
+from agents.baby_manager import get_baby_health_today
 from utils.gpt_calls import gpt_call
 from utils.gpt_parse import parse_gpt_response
 from agents.babymanager.prompts import baby_gpt_prompt
@@ -8,7 +8,7 @@ from typing import List
 # ✅ 第一步：从数据库中获取今天所有记录
 
 def fetch_records_step(state: BabyAgentState) -> BabyAgentState:
-    data = get_today_records(state.user_id, state.db)
+    data = get_baby_health_today(state.user_id, state.db)
     return state.copy(update={
         "records": data,
         "analysis": ""  # 初始化为空字符串

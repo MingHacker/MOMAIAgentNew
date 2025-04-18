@@ -3,7 +3,9 @@ from fastapi import APIRouter, Depends, Query
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
-
+from supabase import create_client, Client
+from core.auth import get_current_user
+from core.supabase import get_supabase
 
 # LangGraph 结构分析
 from agents.mommanager.graph import build_mom_manager_graph
@@ -17,10 +19,10 @@ router = APIRouter()
 class MomAnalysisResponse(BaseModel):
     success: bool
     summary: str  # GPT 生成的关于妈妈健康与建议的分析内容
-    
+
 # ✅ 1. GPT 文本分析（用于 summary）
 @router.get("/api/mom/summary", response_model=MomAnalysisResponse)
-def get_today_mom_summary(userId: str, db: Session = Depends(get_db)):
+def get_today_mom_summary(userId: str, user_id: str = Depends(get_current_user)):
     try:
         # mock 数据结构（未来从数据库替换）
         mock = {"hrv": 34, "sleep": 7.5, "steps": 4100}
@@ -31,7 +33,7 @@ def get_today_mom_summary(userId: str, db: Session = Depends(get_db)):
 
 # ✅ 2. 每日健康数据（图表卡片用）
 @router.get("/api/mom/health/daily")
-def get_mom_health_daily(userId: str = Query(...), db: Session = Depends(get_db)):
+def get_mom_health_daily(userId: str = Query(...), db: Session = Depends(get_supabase)):
     return {
         "date": "2025-04-13",
         "hrv": 34,
@@ -46,7 +48,7 @@ def get_mom_health_daily(userId: str = Query(...), db: Session = Depends(get_db)
 
 # ✅ 3. 每周健康趋势图表
 @router.get("/api/mom/health/weekly")
-def get_mom_health_weekly(userId: str = Query(...), db: Session = Depends(get_db)):
+def get_mom_health_weekly(userId: str = Query(...), db: Session = Depends(get_supabase)):
     from datetime import datetime, timedelta
     today = datetime.now()
     labels = [(today - timedelta(days=i)).strftime('%a') for i in reversed(range(7))]
@@ -61,7 +63,7 @@ def get_mom_health_weekly(userId: str = Query(...), db: Session = Depends(get_db
 
 # ✅ 4. LangGraph 分析主流程（含打分、总结）
 @router.post("/api/analysis/mom/langgraph")
-def analyze_mom_graph(userId: str = Query(...), db: Session = Depends(get_db)):
+def analyze_mom_graph(userId: str = Query(...), db: Session = Depends(get_supabase)):
     graph = build_mom_manager_graph()
     result = graph.invoke(MomAgentState(user_id=userId, db=db))
     final = MomAgentState(**result)

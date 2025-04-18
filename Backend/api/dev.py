@@ -1,4 +1,5 @@
 import os
+from datetime import datetime, timedelta, timezone
 from fastapi import APIRouter, Depends, HTTPException, status
 from agents.babymanager.steps import analyze_with_gpt_step
 from agents.babymanager.schema import BabyAgentState
@@ -37,14 +38,26 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
         )
 
 
-@router.get("/dev/mock_analysis")
-def get_mock_analysis(user_id: str = Depends(get_current_user)):
-    mock_records = {
-        "feed": [{"startTime": "08:00", "amount": 100}, {"startTime": "12:30", "amount": 90}],
-        "sleep": [{"startTime": "10:00", "endTime": "11:00"}],
-        "diaper": [{"time": "09:00", "type": "wet"}],
-        "outside": [{"startTime": "14:00", "duration": 30}],
-    }
+@router.get("/dev/mock_analysis/{baby_id}")
+def get_mock_analysis(baby_id: str, user_id: str = Depends(get_current_user)):
+    # mock_records = {
+    #     "feed": [{"startTime": "08:00", "amount": 100}, {"startTime": "12:30", "amount": 90}],
+    #     "sleep": [{"startTime": "10:00", "endTime": "11:00"}],
+    #     "diaper": [{"time": "09:00", "type": "wet"}],
+    #     "outside": [{"startTime": "14:00", "duration": 30}],
+    # }
+
+    yesterday = datetime.now(timezone.utc) - timedelta(days=1)
+    yesterday_iso = yesterday.isoformat()
+
+    response = supabase.table("baby_logs") \
+    .select("log_type, log_data") \
+    .eq("baby_id", baby_id) \
+    .gte("logged_at", yesterday_iso) \
+    .order("logged_at", desc=False) \
+    .execute()
+
+    print(response);
 
     state = BabyAgentState(
         user_id=user_id,

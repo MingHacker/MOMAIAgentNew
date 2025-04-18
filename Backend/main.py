@@ -1,4 +1,5 @@
 import json
+from fastapi.responses import JSONResponse
 from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
@@ -374,6 +375,44 @@ async def run_reminder_generation_for_all_babies():
         print(f"Error fetching baby IDs for scheduled task: {e}")
 
 
+# --- Agent backend ---
+
+from agents.baby_manager import get_baby_health_today, call_gpt_baby_analysis
+from agents.mom_manager import get_mom_health_today, call_gpt_mom_analysis
+from api.mom import router as mom_router
+from api.task import router as task_router
+from api.baby import router as baby_router
+
+# CORS 中间件配置
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+@app.get("/api/baby_summary")
+def get_today_baby_summary():
+    try:
+        baby_data = get_baby_health_today()
+        analysis = call_gpt_baby_analysis(baby_data)
+        return {"success": True, "summary": analysis}
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"error": str(e)})
+
+@app.get("/api/mom_summary")
+def get_today_mom_summary():
+    try:
+        mom_data = get_mom_health_today()
+        analysis = call_gpt_mom_analysis(mom_data)
+        return {"success": True, "summary": analysis}
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"error": str(e)})
+
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
+
+

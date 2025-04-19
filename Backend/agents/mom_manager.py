@@ -5,7 +5,7 @@ from agents.mommanager.prompts import mom_health_prompt
 
 
 load_dotenv()
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+client = OpenAI(api_key=os.getenv("DEEPSEEK_API_KEY"))
 
 def get_mom_health_today() -> dict:
     """

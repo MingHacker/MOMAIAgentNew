@@ -5,8 +5,36 @@ from supabase import Client, create_client
 from dotenv import load_dotenv
 
 from models import ReminderCreate, BabyLogCreate
+import openai
 
 load_dotenv()
+
+DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY")
+
+def call_deepseek_api(prompt: str) -> str:
+    """
+    Calls the DeepSeek API using the OpenAI library.
+
+    Args:
+        prompt: The prompt to send to the API.
+
+    Returns:
+        The LLM response.
+    """
+    try:
+        openai.api_key = DEEPSEEK_API_KEY
+        response = openai.Completion.create(
+            engine="deepseek-coder",  # Replace with the correct DeepSeek engine
+            prompt=prompt,
+            max_tokens=100,  # Adjust as needed
+            n=1,
+            stop=None,
+            temperature=0.7,  # Adjust as needed
+        )
+        return response.choices[0].text.strip()
+    except Exception as e:
+        print(f"Error calling DeepSeek API: {e}")
+        return f"DeepSeek API error: {e}"
 
 class BabyAIAgent:
     """

@@ -16,21 +16,24 @@ Please analyze today's status and provide:
 # ✅ 结构化 JSON 格式 Prompt（适合 parse_gpt_response 使用）
 def baby_gpt_prompt(data: dict) -> str:
     return f"""
-You're a pediatric assistant. Given the baby's records:
+You are a baby care AI assistant.
+
+Here is today's baby data:
 
 Feedings: {data.get('feed', [])}
 Sleeps: {data.get('sleep', [])}
 Diapers: {data.get('diaper', [])}
-Outside time: {data.get('outside', [])}
+Cries: {data.get('cry', [])}
+Bowel movements: {data.get('bowel', [])}
+Outside activities: {data.get('outside', [])}
 
-1. Summarize today's baby condition.
-2. Recommend the next action (soft reminder style to mom).
-
-Respond in JSON format:
+Please ONLY respond in valid JSON format like this:
 {{
   "summary": "...",
   "next_action": "..."
 }}
+Do not add any explanation or comment before or after the JSON.
+
 """
 
 # ✅ 可扩展：分析宝宝 tips（未来扩展用）

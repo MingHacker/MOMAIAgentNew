@@ -2,125 +2,113 @@
 
 from http import client
 from agents.babymanager.prompts import baby_gpt_prompt
-import openai  
+from openai import OpenAI
 from pydantic import BaseModel
-from sqlalchemy.orm import Session
-from datetime import datetime, date
-from typing import Dict
-from supabase import create_client, Client
 from datetime import date
-from typing import Dict, Any
+from typing import Dict
+from supabase import Client
+import json
+import re
+
+
+client = OpenAI()
 
 class BabyAnalysisResponse(BaseModel):
     summary: str
     next_action: str
 
+type_mapping = {
+    "feeding": "feed",
+    "sleep": "sleep",
+    "diaper": "diaper",
+    "cry": "cry",
+    "bowel": "bowel",
+    "outside": "outside"
+}
 
-def get_mom_health_today(user_id: str, supabase: Client) -> Dict[str, Any]:
-    """
-    根据 user_id 获取妈妈今天的健康数据（从 mom_profiles 和 mom_health 表）
-    返回统一结构：
-    {
-        "success": bool,
-        "message": str,
-        "data": {...} or None
-    }
-    """
+def extract_json(text):
+    try:
+        match = re.search(r"\{.*\}", text, re.DOTALL)
+        if match:
+            return json.loads(match.group(0))
+    except Exception as e:
+        print("⚠️ JSON 提取失败:", e)
+    return {"summary": text.strip(), "next_action": ""}
+
+def get_baby_health_today(baby_id: str, supabase: Client) -> Dict:
     today_str = date.today().isoformat()
 
-    # 1. 获取 mom_id
-    mom_result = supabase.table("mom_profiles") \
-        .select("id") \
-        .eq("user_id", user_id) \
-        .single() \
+    logs_result = (
+        supabase
+        .table("baby_logs")
+        .select("log_type, log_data, logged_at")
+        .eq("baby_id", baby_id)
+        .gte("logged_at", today_str)
         .execute()
+    )
 
-    if not mom_result.data:
-        return {
-            "success": False,
-            "message": "No mom profile found for this user",
-            "data": None
-        }
+    print("🧾 原始 logs_result:", logs_result.data)
 
-    mom_id = mom_result.data["id"]
-
-    # 2. 查询今天的健康记录
-    health_result = supabase.table("mom_health") \
-        .select("*") \
-        .eq("mom_id", mom_id) \
-        .eq("record_date", today_str) \
-        .single() \
-        .execute()
-
-    if not health_result.data:
-        return {
-            "success": False,
-            "message": "No health record found for today",
-            "data": None
-        }
-
-    health = health_result.data
-
-    # 3. 返回统一格式
-    return {
-        "success": True,
-        "message": "Health data loaded successfully",
-        "data": {
-            "hrv": health.get("hrv"),
-            "sleep": health.get("sleep_hours"),
-            "steps": health.get("steps"),
-            "mood": health.get("mood"),
-            "stress": health.get("stress_level"),
-            "calories": health.get("calories_burned"),
-            "restingHeartRate": health.get("resting_heart_rate"),
-            "breathingRate": health.get("breathing_rate")
-        }
+    logs = {
+        "feed": [],
+        "sleep": [],
+        "diaper": [],
+        "cry": [],
+        "bowel": [],
+        "outside": []
     }
 
+    type_mapping = {
+        "feeding": "feed",
+        "sleep": "sleep",
+        "diaper": "diaper",
+        "cry": "cry",
+        "bowel": "bowel",
+        "outside": "outside"
+    }
+
+    for row in logs_result.data:
+        log_type = row.get("log_type")
+        log_data = row.get("log_data")
+
+        if not log_type or not log_data:
+            continue  # 跳过无效数据
+
+        mapped_key = type_mapping.get(log_type)
+        if mapped_key:
+            logs[mapped_key].append(log_data)
+        else:
+            print(f"⚠️ 未知类型 {log_type}，跳过")
+
+    print(f"✅ 解析完成 baby 健康数据: {logs}")
+    return logs
+
+
 # ✨ GPT 分析函数（调用分析 Agent）
-def call_gpt_baby_analysis(data: dict) -> BabyAnalysisResponse:
-    prompt = baby_gpt_prompt.format(data=data)
+def call_gpt_baby_analysis(baby_id: str, supabase: Client) -> Dict:
+    data = get_baby_health_today(baby_id, supabase)
+    prompt = baby_gpt_prompt(data)
 
-    response = openai.ChatCompletion.create(
-        model="gpt-4o-mini",
-        messages=[
-            {"role": "system", "content": "You are a baby care assistant AI."},
-            {"role": "user", "content": prompt}
-        ],
-        temperature=0.7,
-    )
-    answer = response['choices'][0]['message']['content']
+    try:
+        response = client.chat.completions.create(
+            model="gpt-4o",
+            messages=[
+                {"role": "system", "content": "You are a baby care assistant AI."},
+                {"role": "user", "content": prompt}
+            ],
+            temperature=0.7,
+        )
+        content = response.choices[0].message.content
+        
+        parsed = extract_json(content)
 
-    # 简化方式解析，建议后续改为 JSON parser
-    parts = answer.split("Next Action:")
-    return BabyAnalysisResponse(
-        summary=parts[0].strip(),
-        next_action=parts[1].strip() if len(parts) > 1 else ""
-    )
-
-def call_gpt_baby_analysis_str(data: dict) -> str:
-
-    prompt = baby_gpt_prompt(
-        sleep_hours=data["sleep_duration"],
-        feedings=data["feeding_count"],
-        diapers=data["diaper_count"],
-        cries=data["cry_count"],
-        outside_minutes=data["outside_duration"]
-    )
-
-    response = client.chat.completions.create(
-        model="gpt-4o-mini",
-        messages=[{"role": "user", "content": prompt}]
-    )
-    return response.choices[0].message.content
-
-class BabyManager:
-    def __init__(self, db: Session):
-        self.db = db
-
-    def get_baby_health_today(self, user_id: str):
-        return get_baby_health_today(user_id, self.db)
-
-    def analyze_baby_health(self, data: dict) -> BabyAnalysisResponse:
-        return call_gpt_baby_analysis(data)
-
+        return {
+            "summary": parsed.get("summary", ""),
+            "next_action": parsed.get("next_action", "")
+        }
+    except Exception as e:
+        print("❌ GPT 返回异常:", e)
+        return {
+            "summary": str(e),
+            "next_action": ""
+        }

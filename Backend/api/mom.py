@@ -1,18 +1,21 @@
 # ✅ api/mom.py
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, HTTPException, status
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from supabase import create_client, Client
 from core.auth import get_current_user
 from core.supabase import get_supabase
+from typing import Dict, Any
+from supabase import Client
+from datetime import datetime, timedelta
 
 # LangGraph 结构分析
 from agents.mommanager.graph import build_mom_manager_graph
 from agents.mommanager.schema import MomAgentState
 
 # GPT 分析（温柔鼓励）
-from agents.mom_manager import call_gpt_mom_analysis
+from agents.mom_manager import call_gpt_mom_analysis, get_mom_health_today
 
 router = APIRouter()
 
@@ -20,60 +23,109 @@ class MomAnalysisResponse(BaseModel):
     success: bool
     summary: str  # GPT 生成的关于妈妈健康与建议的分析内容
 
+class MomAgentState(BaseModel):
+    summary: str
+    health_score: int
+    hrv: int
+    sleep: int
+    steps: int
+    resting_hr: int
+    calories: int
+    breathing_rate: float
+
+
 # ✅ 1. GPT 文本分析（用于 summary）
 @router.get("/api/mom/summary", response_model=MomAnalysisResponse)
-def get_today_mom_summary(userId: str, user_id: str = Depends(get_current_user)):
+def get_today_mom_summary(userId: str = Query(...), supabase: Client = Depends(get_supabase)):
     try:
-        # mock 数据结构（未来从数据库替换）
-        mock = {"hrv": 34, "sleep": 7.5, "steps": 4100}
-        analysis = call_gpt_mom_analysis(mock)
+        data = get_mom_health_today(userId, supabase)
+        print(f"获取到的健康数据：{data}")
+        
+        if not data.get("success"):
+            return JSONResponse(
+                status_code=500,
+                content={"success": False, "summary": data.get("message", "获取健康数据失败")}
+            )
+            
+        health_data = data.get("data", {})
+        if not health_data:
+            return JSONResponse(
+                status_code=500,
+                content={"success": False, "summary": "没有找到健康数据"}
+            )
+        
+        prompt_input = {
+            "hrv": health_data.get("hrv"),
+            "sleep": health_data.get("sleep_hours"),
+            "steps": health_data.get("steps"),
+            "resting_heart_rate": health_data.get("resting_heart_rate"),
+            "breathing_rate": health_data.get("breathing_rate")
+        }
+        print(f"发送给 GPT 的数据：{prompt_input}")
+        
+        analysis = call_gpt_mom_analysis(prompt_input)
+        return {"success": True, "summary": analysis}
+    except Exception as e:
+        print(f"发生错误：{str(e)}")
+        return JSONResponse(status_code=500, content={"success": False, "summary": str(e)})
+
+
+######### ✅ 2. 每日健康数据（图表卡片用）
+@router.get("/api/mom/health/daily")
+def get_mom_health_daily(
+    userId: str = Query(...),
+    supabase: Client = Depends(get_supabase)
+):
+    try:
+        analysis: Dict[str, Any] = get_mom_health_today(userId, supabase)
         return {"success": True, "summary": analysis}
     except Exception as e:
         return JSONResponse(status_code=500, content={"success": False, "summary": str(e)})
-
-# ✅ 2. 每日健康数据（图表卡片用）
-@router.get("/api/mom/health/daily")
-def get_mom_health_daily(userId: str = Query(...), db: Session = Depends(get_supabase)):
-    return {
-        "date": "2025-04-13",
-        "hrv": 34,
-        "resting_hr": 72,
-        "sleep": 6.8,
-        "steps": 4100,
-        "calories": 1650,
-        "breathing_rate": 17,
-        "summary": "HRV 略低，注意多休息，睡眠还不错",
-        "health_score": 72
-    }
-
+    
 # ✅ 3. 每周健康趋势图表
 @router.get("/api/mom/health/weekly")
-def get_mom_health_weekly(userId: str = Query(...), db: Session = Depends(get_supabase)):
-    from datetime import datetime, timedelta
-    today = datetime.now()
-    labels = [(today - timedelta(days=i)).strftime('%a') for i in reversed(range(7))]
+def get_mom_weekly_health(
+    user_id: str = Query(...),
+    supabase: Client = Depends(get_supabase)
+):
+    try:
+        today = datetime.utcnow().date()
+        start_date = today - timedelta(days=6)
 
-    return {
-        "labels": labels,
-        "hrv": [34, 36, 38, 35, 32, 30, 40],
-        "resting_hr": [72, 74, 70, 71, 69, 70, 72],
-        "steps": [4100, 5800, 3000, 2000, 6200, 7000, 5400],
-        "sleep": [6.5, 7.0, 6.0, 6.8, 5.9, 7.1, 7.2]
-    }
+        health_result = (
+            supabase
+            .table("mom_health")
+            .select("hrv, sleep_hours, resting_heart_rate, steps, breathing_rate, record_date")
+            .eq("mom_id", user_id)
+            .gte("record_date", start_date.isoformat())
+            .execute()
+        )
 
-# ✅ 4. LangGraph 分析主流程（含打分、总结）
-@router.post("/api/analysis/mom/langgraph")
-def analyze_mom_graph(userId: str = Query(...), db: Session = Depends(get_supabase)):
-    graph = build_mom_manager_graph()
-    result = graph.invoke(MomAgentState(user_id=userId, db=db))
-    final = MomAgentState(**result)
-    return {
-        "summary": final.summary,
-        "health_score": final.health_score,
-        "hrv": final.hrv,
-        "sleep": final.sleep,
-        "steps": final.steps,
-        "resting_hr": final.resting_hr,
-        "calories": final.calories,
-        "breathing_rate": final.breathing_rate
-    }
+        daily_summary = {}
+        for row in health_result.data:
+            day = row["record_date"]
+            daily_summary[day] = {
+                "date": day,
+                "hrv": row.get("hrv", 0),
+                "sleep_hours": row.get("sleep_hours", 0),
+                "resting_heart_rate": row.get("resting_heart_rate", 0),
+                "steps": row.get("steps", 0),
+                "breathing_rate": row.get("breathing_rate", 0)
+            }
+
+        # 补全空白日期
+        output = []
+        for i in range(7):
+            day = (start_date + timedelta(days=i)).isoformat()
+            output.append(daily_summary.get(day, {
+                "date": day,
+                "hrv": 0,
+                "sleep_hours": 0,
+                "resting_heart_rate": 0,
+                "steps": 0,
+                "breathing_rate": 0
+            }))
+
+        return {"success": True, "data": output}
+    except Exception as e:
+        return {"success": False, "summary": str(e)}

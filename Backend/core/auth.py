@@ -3,6 +3,9 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from supabase import create_client, Client
 import jwt
+from dotenv import load_dotenv
+
+load_dotenv()
 
 _supabase_url = os.getenv("SUPABASE_URL")
 _supabase_key = os.getenv("SUPABASE_KEY")

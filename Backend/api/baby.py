@@ -11,6 +11,13 @@ from supabase import create_client, Client
 from dotenv import load_dotenv
 import jwt
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from typing import Dict, Any
+from supabase import Client
+from datetime import datetime
+from fastapi.responses import JSONResponse
+from agents.baby_manager import get_baby_health_today
+from core.supabase import get_supabase
+from agents.baby_manager import call_gpt_baby_analysis
 
 load_dotenv()
 
@@ -45,69 +52,131 @@ class BabyAnalysisResponse(BaseModel):
     summary: str
     next_action: str
     
-@router.post("/api/analysis/baby/langgraph", operation_id="analyze_baby_graph_v1")
-async def analyze_baby_via_graph(user_id: str = Depends(get_current_user)):
-    state = BabyAgentState(
-        user_id=user_id,
-        db=supabase,
-        records={},
-        analysis="",
-        next_action="",
-        missing_fields=[],
-        health_score=100
-    )
+#@router.post("/api/analysis/baby/langgraph", operation_id="analyze_baby_graph_v1")
+#async def analyze_baby_via_graph(user_id: str = Depends(get_current_user)):
+#    state = BabyAgentState(
+#        user_id=user_id,
+#        db=supabase,
+#        records={},
+#        analysis="",
+#        next_action="",
+#        missing_fields=[],
+#        health_score=100
+#    )
 
-    graph = build_baby_manager_graph()
-    result = graph.invoke(state)
-    result = BabyAgentState(**result) 
 
-    return {
-        "summary": result.analysis,
-        "next_action": result.next_action,
-        "health_score": result.health_score,
-        "missing_fields": result.missing_fields
-    }
+@router.get("/api/baby/summary/week")
+def get_weekly_baby_summary(
+    baby_id: str = Query(...),
+    supabase: Client = Depends(get_supabase)
+):
+    try:
+        today = datetime.utcnow().date()
+        start_date = today - timedelta(days=6)  # 包含今天，共7天
 
-@router.get("/api/baby/summary/daily")
-async def get_baby_daily_summary(user_id: str = Depends(get_current_user)) -> Dict:
-    today = datetime.now().date()
-    start = datetime.combine(today, datetime.min.time())
-    end = datetime.combine(today, datetime.max.time())
+        logs_result = (
+            supabase
+            .table("baby_logs")
+            .select("log_type, log_data, logged_at")
+            .eq("baby_id", baby_id)
+            .gte("logged_at", start_date.isoformat())
+            .execute()
+        )
 
-    # Use Supabase to fetch the data
-    feed_records_response = supabase.table("baby_logs").select("*").eq("baby_id", user_id).eq("log_type", "feeding").gte("logged_at", start.isoformat()).lte("logged_at", end.isoformat()).execute()
-    sleep_records_response = supabase.table("baby_logs").select("*").eq("baby_id", user_id).eq("log_type", "sleep").gte("logged_at", start.isoformat()).lte("logged_at", end.isoformat()).execute()
-    diaper_records_response = supabase.table("baby_logs").select("*").eq("baby_id", user_id).eq("log_type", "diaper").gte("logged_at", start.isoformat()).lte("logged_at", end.isoformat()).execute()
-    outside_records_response = supabase.table("baby_logs").select("*").eq("baby_id", user_id).eq("log_type", "outside").gte("logged_at", start.isoformat()).lte("logged_at", end.isoformat()).execute()
+        daily_summary = {}
+        for row in logs_result.data:
+            dt = datetime.fromisoformat(row["logged_at"])
+            day = dt.date().isoformat()
+            daily = daily_summary.setdefault(day, {
+                "date": day,
+                "feed_total_ml": 0,
+                "sleep_total_hours": 0,
+                "diaper_count": 0,
+                "bowel_count": 0,
+                "outside_total_minutes": 0
+            })
 
-    feed_records = feed_records_response.data
-    sleep_records = sleep_records_response.data
-    diaper_records = diaper_records_response.data
-    outside_records = outside_records_response.data
+            log_type = row["log_type"]
+            data = row["log_data"]
 
-    feed_data = {datetime.fromisoformat(r["logged_at"]).strftime("%H:%M"): r["log_data"]["amount"] for r in feed_records}
-    sleep_data = {datetime.fromisoformat(r["logged_at"]).strftime("%H:%M"): r["log_data"]["duration"] for r in sleep_records}
-    diaper_poop_count = sum(1 for r in diaper_records if r["log_data"].get("poop", False))
-    diaper_total = len(diaper_records)
-    outside_minutes = sum(r["log_data"]["duration"] for r in outside_records)
+            if log_type == "feeding":
+                amount = data.get("amount", 0)
+                try:
+                    daily["feed_total_ml"] += int(amount)
+                except:
+                    pass
 
-    return {
-        "feed_graph": feed_data,
-        "sleep_graph": sleep_data,
-        "diaper": {"total": diaper_total, "poop": diaper_poop_count},
-        "outside": outside_minutes,
-        "summary": f"今天共喂奶 {len(feed_records)} 次，睡觉 {len(sleep_records)} 次，换尿布 {diaper_total} 次，外出 {outside_minutes} 分钟。"
-    }
+            elif log_type == "sleep":
+                duration = data.get("duration", 0) / 3600  # 秒转小时
+                daily["sleep_total_hours"] += round(duration, 2)
 
-@router.get("/api/baby/summary/weekly")
-def get_baby_summary_weekly(user_id: str = Depends(get_current_user)) -> Dict[str, List]:
-    today = datetime.now()
-    labels = [(today - timedelta(days=i)).strftime('%a') for i in reversed(range(7))]
+            elif log_type == "diaper":
+                daily["diaper_count"] += 1
+                if data.get("type") == "dirty":
+                    daily["bowel_count"] += 1
 
-    return {
-        "labels": labels,
-        "feed": [120, 100, 140, 110, 130, 150, 115],  # 单位：ml
-        "sleep": [480, 450, 500, 470, 490, 510, 440],  # 单位：分钟
-        "diaper": [5, 4, 6, 5, 5, 6, 4],               # 次数
-        "outside": [20, 30, 15, 0, 40, 35, 25]          # 单位：分钟
-    }
+            elif log_type == "outside":
+                duration = data.get("duration", 0)
+                daily["outside_total_minutes"] += int(duration)
+
+        # 补全空天数
+        output = []
+        for i in range(7):
+            day = (start_date + timedelta(days=i)).isoformat()
+            output.append(daily_summary.get(day, {
+                "date": day,
+                "feed_total_ml": 0,
+                "sleep_total_hours": 0,
+                "diaper_count": 0,
+                "bowel_count": 0,
+                "outside_total_minutes": 0
+            }))
+
+        return {"success": True, "data": output}
+
+    except Exception as e:
+        return {"success": False, "summary": str(e)}
+
+######### ✅ 2. 每日健康数据（图表卡片用）
+@router.get("/api/baby/health/daily")
+def get_baby_health_daily(
+    user_id: str = Query(...),
+    supabase: Client = Depends(get_supabase)
+):
+    try:
+        analysis: Dict[str, Any] = get_baby_health_today(user_id, supabase)
+        return {"success": True, "summary": analysis}
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"success": False, "summary": str(e)})
+    
+
+
+@router.get("/api/baby/summary", response_model=BabyAnalysisResponse)
+def get_today_baby_summary(
+    baby_id: str = Query(..., description="宝宝 ID"),
+    supabase: Client = Depends(get_supabase)
+):
+    try:
+        data = get_baby_health_today(baby_id, supabase)
+        print(f"✅ 获取到的宝宝数据: {data}")
+
+        if not data or all(len(v) == 0 for k, v in data.items() if k != "babyName"):
+            return JSONResponse(
+                status_code=400,
+                content={"success": False, "summary": "今天没有记录"}
+            )
+
+        # 调用 GPT 分析
+        result = call_gpt_baby_analysis(baby_id, supabase)
+        return {
+            "success": True,
+            "summary": result["summary"],
+            "next_action": result["next_action"]
+        }
+
+    except Exception as e:
+        print(f"❌ 分析宝宝健康数据出错: {str(e)}")
+        return JSONResponse(
+            status_code=500,
+            content={"success": False, "summary": str(e)}
+        )

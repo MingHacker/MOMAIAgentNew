@@ -392,34 +392,6 @@ app.include_router(emotion_router)
 
 
 
-# CORS 中间件配置
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-@app.get("/api/baby_summary")
-def get_today_baby_summary():
-    try:
-        baby_data = get_baby_health_today()
-        analysis = call_gpt_baby_analysis(baby_data)
-        return {"success": True, "summary": analysis}
-    except Exception as e:
-        return JSONResponse(status_code=500, content={"error": str(e)})
-
-@app.get("/api/mom_summary")
-def get_today_mom_summary():
-    try:
-        mom_data = get_mom_health_today()
-        analysis = call_gpt_mom_analysis(mom_data)
-        return {"success": True, "summary": analysis}
-    except Exception as e:
-        return JSONResponse(status_code=500, content={"error": str(e)})
-
-
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)

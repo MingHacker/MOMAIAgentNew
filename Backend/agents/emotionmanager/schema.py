@@ -1,15 +1,16 @@
-# -------- schema.py --------
-from typing import Literal, TypedDict, Optional
+from pydantic import BaseModel
+from typing import Optional, List
 
 
-class Metrics(TypedDict, total=False):
-    sleep_hours_last_night: float
-    hrv: float
-    baby_total_playtime_today: str
-    tasks_completed: int
-    period_due_in_days: int
-    stress_level: Literal["low", "medium", "high"]
+class EmotionAgentState(BaseModel):
+    user_id: str
+    baby_id: str
+    mom_data: dict
+    baby_data: dict
+    task_count: Optional[int] = 0  # ✅ 可选：传入完成任务数
+    summary: Optional[str] = ""
+    emotion_label: Optional[str] = ""
+    suggestions: Optional[List[str]] = []
+    gentle_message: Optional[str] = ""
 
-
-class CompanionHeader(TypedDict):
-    headerText: str
+celebration_text: Optional[str] = ""

@@ -7,6 +7,7 @@ from supabase import create_client, Client
 from dotenv import load_dotenv
 import jwt
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+import json
 
 load_dotenv()
 
@@ -109,6 +110,7 @@ class BabyAnalysisResponse(BaseModel):
 #     }
 
 from baby_health_agent.agent import baby_health_graph, BabyHealthAgentState
+from datetime import date, timedelta
 
 @router.get("/health_analysis/{baby_id}")
 async def get_baby_health_analysis(baby_id: str, user_id: str = Depends(get_current_user), ):
@@ -118,4 +120,22 @@ async def get_baby_health_analysis(baby_id: str, user_id: str = Depends(get_curr
     )
     # result = baby_health_agent(state)
     result = await baby_health_graph.ainvoke(state)
-    return result["llm_response"]
+    
+    review_data = result["llm_response"]
+
+    # Save the result to the baby_health_reviews table
+    try:
+        data = {
+            "baby_id": baby_id,
+            "review_period_start": (date.today() - timedelta(days=7)).isoformat(),
+            "review_period_end": date.today().isoformat(),
+            "overall_status": review_data.get("overall_status", "N/A"),
+            "summary": review_data.get("summary", "N/A"),
+            "indicators": review_data.get("indicators", {}),
+            "recommendations": review_data.get("recommendations", {})
+        }
+        supabase.table("baby_health_reviews").insert(data).execute()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+    return review_data

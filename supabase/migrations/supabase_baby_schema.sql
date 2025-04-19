@@ -55,3 +55,16 @@ CREATE TABLE IF NOT EXISTS events_history (
     occurred_at TIMESTAMPTZ DEFAULT NOW(),
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+CREATE TABLE IF NOT EXISTS baby_health_reviews (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    baby_id UUID REFERENCES baby_profiles(id) ON DELETE CASCADE,
+    review_period_start DATE NOT NULL,
+    review_period_end DATE NOT NULL,
+    overall_status TEXT, -- e.g., 'healthy', 'needs attention', 'unusual patterns'
+    summary TEXT, -- human-readable GPT-generated summary
+    indicators JSONB, -- structured info like {"avg_sleep_hours": 12.5, "feeding_interval": "3h"}
+    recommendations JSONB, -- e.g., {"action": "monitor feeding", "reason": "lower intake than usual"}
+    generated_on TIMESTAMPTZ DEFAULT NOW(),
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);

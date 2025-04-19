@@ -1,4 +1,5 @@
 from typing import Optional, Dict, Any, List
+import json
 from pydantic import BaseModel
 from supabase import create_client, Client
 from dotenv import load_dotenv
@@ -43,12 +44,32 @@ def generate_prompts(state: BabyHealthAgentState) -> BabyHealthAgentState:
     return state
 
 def call_llm(state: BabyHealthAgentState) -> BabyHealthAgentState:
-    state.llm_response = call_deepseek_api(state.prompt)
+    # Get structured response from LLM
+    structured_prompt = f"""{state.prompt}
+    
+    Respond in JSON format with these keys:
+    - overall_status: string (healthy/needs_attention/warning)
+    - summary: string (3-5 sentence summary)
+    - indicators: object (key-value pairs of metrics)
+    - recommendations: array of strings (actionable items)"""
+    
+    state.llm_response = call_deepseek_api(structured_prompt)
     return state
 
 def parse_llm_response(state: BabyHealthAgentState) -> BabyHealthAgentState:
-    state.analysis = state.llm_response
-    state.next_action = "No action needed"
+    try:
+        llm_response = state.llm_response
+        if llm_response.startswith("```json"):
+            llm_response = llm_response.strip("`").lstrip("json").strip()
+        clean_str = llm_response.encode().decode("unicode_escape")
+        response_data = json.loads(clean_str)
+        state.analysis = response_data.get("summary", "No summary provided")
+        state.next_action = ", ".join(response_data.get("recommendations", []))
+        # Maintain full structured response
+        state.llm_response = response_data
+    except json.JSONDecodeError:
+        state.analysis = "Error parsing LLM response"
+        state.next_action = "Check API connection"
     return state
 
 # Define the LangGraph graph

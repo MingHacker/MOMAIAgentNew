@@ -33,9 +33,7 @@ def call_deepseek_api(prompt: str) -> str:
             messages=[
                 {"role": "system", "content": "You are a helpful assistant."},
                 {"role": "user", "content": prompt}
-            ],
-            temperature=0.7,
-            max_tokens=100
+            ]
         )
         return response.choices[0].message.content.strip()
     except Exception as e:

@@ -8,55 +8,73 @@ from sqlalchemy.orm import Session
 from datetime import datetime, date
 from typing import Dict
 from supabase import create_client, Client
+from datetime import date
+from typing import Dict, Any
 
 class BabyAnalysisResponse(BaseModel):
     summary: str
     next_action: str
 
-def get_baby_health_today(user_id: str, supabase: Client) -> Dict:
-    print(f"Getting today's baby health data for user {user_id}")
 
-    # 1. 获取 baby_id 和 babyName（假设只有一个宝宝）
-    baby_result = supabase.table("baby_profiles").select("id, name").eq("user_id", user_id).single().execute()
-
-    if baby_result.data is None:
-        return {"error": "No baby profile found"}
-
-    baby_id = baby_result.data["id"]
-    baby_name = baby_result.data.get("name", "Unknown")
-
-    # 2. 获取今天的 baby_logs（以 UTC 日期判断）
+def get_mom_health_today(user_id: str, supabase: Client) -> Dict[str, Any]:
+    """
+    根据 user_id 获取妈妈今天的健康数据（从 mom_profiles 和 mom_health 表）
+    返回统一结构：
+    {
+        "success": bool,
+        "message": str,
+        "data": {...} or None
+    }
+    """
     today_str = date.today().isoformat()
-    logs_result = supabase.table("baby_logs") \
-        .select("log_type, log_data, logged_at") \
-        .eq("baby_id", baby_id) \
-        .gte("logged_at", today_str) \
+
+    # 1. 获取 mom_id
+    mom_result = supabase.table("mom_profiles") \
+        .select("id") \
+        .eq("user_id", user_id) \
+        .single() \
         .execute()
 
-    # 3. 整理返回格式
-    feedings, sleeps, diapers = [], [], []
-    outside_duration = 0
+    if not mom_result.data:
+        return {
+            "success": False,
+            "message": "No mom profile found for this user",
+            "data": None
+        }
 
-    for row in logs_result.data:
-        log_type = row["log_type"]
-        log_data = row["log_data"]
+    mom_id = mom_result.data["id"]
 
-        if log_type == "feeding":
-            feedings.append(log_data)
-        elif log_type == "sleep":
-            sleeps.append(log_data)
-        elif log_type == "diaper":
-            diapers.append(log_data)
-        elif log_type == "outside":
-            duration = log_data.get("duration", 0)
-            outside_duration += duration
+    # 2. 查询今天的健康记录
+    health_result = supabase.table("mom_health") \
+        .select("*") \
+        .eq("mom_id", mom_id) \
+        .eq("record_date", today_str) \
+        .single() \
+        .execute()
 
+    if not health_result.data:
+        return {
+            "success": False,
+            "message": "No health record found for today",
+            "data": None
+        }
+
+    health = health_result.data
+
+    # 3. 返回统一格式
     return {
-        "babyName": baby_name,
-        "feedings": feedings,
-        "sleeps": sleeps,
-        "diapers": diapers,
-        "outsideDuration": outside_duration
+        "success": True,
+        "message": "Health data loaded successfully",
+        "data": {
+            "hrv": health.get("hrv"),
+            "sleep": health.get("sleep_hours"),
+            "steps": health.get("steps"),
+            "mood": health.get("mood"),
+            "stress": health.get("stress_level"),
+            "calories": health.get("calories_burned"),
+            "restingHeartRate": health.get("resting_heart_rate"),
+            "breathingRate": health.get("breathing_rate")
+        }
     }
 
 # ✨ GPT 分析函数（调用分析 Agent）

@@ -10,18 +10,72 @@ from agents.emotion_manager import run_emotion_analysis
 import asyncio
 from agents.emotionmanager.emotion_card_image_gen import generate_emotion_card_image
 from utils.emotion_utils import generate_celebration_text, get_baby_months_old
+import os
+from dotenv import load_dotenv
+import jwt
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi import HTTPException, status
+from supabase import create_client
+
 router = APIRouter()
 
-@router.get("/api/emotion/today")
-async def get_today_emotion(
-    user_id: str = Query(...),
-    baby_id: str = Query(...),
-    task_count: Optional[int] = 0,
-    supabase = Depends(get_supabase)
-):
+load_dotenv()
+
+supabase_url = os.getenv("SUPABASE_URL")
+supabase_key = os.getenv("SUPABASE_KEY")
+
+supabase: Client = create_client(supabase_url, supabase_key)
+
+router = APIRouter()
+
+security = HTTPBearer()
+
+async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
     try:
-        # 1. 查询 mom 数据
-        # 首先获取 mom_id
+        token = credentials.credentials
+        decoded = jwt.decode(
+            token,
+            os.getenv("SUPABASE_KEY"),
+            algorithms=["HS256"],
+            audience="authenticated",
+            issuer=f"{os.getenv('SUPABASE_URL')}/auth/v1",
+            options={"verify_signature": False}
+        )
+        return decoded["sub"]
+    except jwt.PyJWTError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid authentication credentials",
+        )
+
+
+@router.get("/api/emotion/today", status_code=status.HTTP_200_OK)
+async def get_today_emotion(baby_id: str, user_id: str = Depends(get_current_user)):
+    try:
+        today_str = date.today().isoformat()
+
+        # ✅ 0. 查询今天已完成任务数
+        main_result = (
+                supabase.table("tasks_main")
+                .select("task_id")
+                .eq("mom_id", user_id)
+                .eq("status", "completed")
+                .gte("complete_date", today_str)
+                .execute()
+            )
+
+            # 查询子任务完成数
+        sub_result = (
+                supabase.table("tasks_sub")
+                .select("sub_task_id")
+                .eq("mom_id", user_id)
+                .eq("status", "completed")
+                .gte("complete_date", today_str)
+                .execute()
+            )
+        task_count = len(main_result.data) + len(sub_result.data)
+
+        # ✅ 1. 查询 mom 健康数据
         mom_profile = (
             supabase
             .table("mom_profiles")
@@ -36,30 +90,29 @@ async def get_today_emotion(
 
         mom_id = mom_profile.data["id"]
 
-        # 查询健康数据
-        result = (
+        mom_result = (
             supabase
             .table("mom_health")
             .select("hrv, sleep_hours, resting_heart_rate, record_date")
             .eq("mom_id", mom_id)
-            .gte("record_date", date.today().isoformat())
+            .gte("record_date", today_str)
             .order("record_date", desc=True)
             .limit(1)
             .execute()
         )
 
-        if not result.data:
-            return JSONResponse(status_code=404, content={"success": False, "message": "No mom data"})
+        if not mom_result.data:
+            return JSONResponse(status_code=404, content={"success": False, "message": "No mom health data found"})
 
-        mom = result.data[0]
+        mom = mom_result.data[0]
 
-        # 2. 查询 baby 数据
+        # ✅ 2. 查询 baby 今日日志
         baby_logs = (
             supabase
             .table("baby_logs")
             .select("log_type, log_data, logged_at")
             .eq("baby_id", baby_id)
-            .gte("logged_at", date.today().isoformat())
+            .gte("logged_at", today_str)
             .execute()
         ).data
 
@@ -72,10 +125,10 @@ async def get_today_emotion(
             data = row["log_data"]
             if log_type == "sleep":
                 baby["sleep_total_hours"] += data.get("duration", 0) / 3600  # 秒转小时
-            if log_type == "cry":
+            elif log_type == "cry":
                 baby["cry_total_minutes"] += data.get("duration_minutes", 0)
 
-        # 3. 执行 Emotion Agent
+        # ✅ 3. 构建 LangGraph Emotion Agent
         graph = build_emotion_graph()
         state = EmotionAgentState(
             user_id=user_id,
@@ -86,10 +139,6 @@ async def get_today_emotion(
         )
 
         result = await graph.ainvoke(state)
-        print(f"Graph result type: {type(result)}")
-        print(f"Graph result: {result}")
-
-        # 将结果转换为字典
         result_dict = dict(result)
 
         return {
@@ -103,6 +152,7 @@ async def get_today_emotion(
     except Exception as e:
         print(f"Error in emotion analysis: {str(e)}")
         return JSONResponse(status_code=500, content={"success": False, "message": str(e)})
+    
 
 @router.get("/api/emotion/card")
 def get_emotion_card(user_id: str, baby_id: str):

@@ -52,24 +52,10 @@ class BabyAnalysisResponse(BaseModel):
     summary: str
     next_action: str
     
-#@router.post("/api/analysis/baby/langgraph", operation_id="analyze_baby_graph_v1")
-#async def analyze_baby_via_graph(user_id: str = Depends(get_current_user)):
-#    state = BabyAgentState(
-#        user_id=user_id,
-#        db=supabase,
-#        records={},
-#        analysis="",
-#        next_action="",
-#        missing_fields=[],
-#        health_score=100
-#    )
 
 
-@router.get("/api/baby/summary/week")
-def get_weekly_baby_summary(
-    baby_id: str = Query(...),
-    supabase: Client = Depends(get_supabase)
-):
+@router.get("/api/baby/summary/week", status_code=status.HTTP_200_OK)
+def get_weekly_baby_summary(baby_id: str, user_id: str = Depends(get_current_user)):
     try:
         today = datetime.utcnow().date()
         start_date = today - timedelta(days=6)  # 包含今天，共7天
@@ -138,24 +124,18 @@ def get_weekly_baby_summary(
         return {"success": False, "summary": str(e)}
 
 ######### ✅ 2. 每日健康数据（图表卡片用）
-@router.get("/api/baby/health/daily")
-def get_baby_health_daily(
-    user_id: str = Query(...),
-    supabase: Client = Depends(get_supabase)
-):
+@router.get("/api/baby/health/daily", status_code=status.HTTP_200_OK)
+async def get_baby_health_daily(baby_id: str, user_id: str = Depends(get_current_user)):
     try:
-        analysis: Dict[str, Any] = get_baby_health_today(user_id, supabase)
+        analysis: Dict[str, Any] = get_baby_health_today(baby_id, supabase)
         return {"success": True, "summary": analysis}
     except Exception as e:
         return JSONResponse(status_code=500, content={"success": False, "summary": str(e)})
     
 
 
-@router.get("/api/baby/summary", response_model=BabyAnalysisResponse)
-def get_today_baby_summary(
-    baby_id: str = Query(..., description="宝宝 ID"),
-    supabase: Client = Depends(get_supabase)
-):
+@router.get("/api/baby/summary", status_code=status.HTTP_200_OK)
+def get_today_baby_summary(baby_id: str, user_id: str = Depends(get_current_user)):
     try:
         data = get_baby_health_today(baby_id, supabase)
         print(f"✅ 获取到的宝宝数据: {data}")
@@ -180,3 +160,16 @@ def get_today_baby_summary(
             status_code=500,
             content={"success": False, "summary": str(e)}
         )
+    
+
+#@router.post("/api/analysis/baby/langgraph", operation_id="analyze_baby_graph_v1")
+#async def analyze_baby_via_graph(user_id: str = Depends(get_current_user)):
+#    state = BabyAgentState(
+#        user_id=user_id,
+#        db=supabase,
+#        records={},
+#        analysis="",
+#        next_action="",
+#        missing_fields=[],
+#        health_score=100
+#    )

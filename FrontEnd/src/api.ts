@@ -313,3 +313,173 @@ function handleApiError(error: unknown): never {
   }
   throw new Error(`API Error: ${(error as Error).message}`);
 }
+
+// --- Mom Endpoints ---
+
+type MomSummaryResponse = {
+  success: boolean;
+  summary: string;
+};
+
+export type MomHealthData = {
+  date: string;
+  hrv: number;
+  sleep_hours: number;
+  resting_heart_rate: number;
+  steps: number;
+  breathing_rate: number;
+};
+
+export type MomHealthResponse = {
+  success: boolean;
+  data: MomHealthData[];
+};
+
+const momApi = {
+  getTodaySummary: async (): Promise<MomSummaryResponse> => {
+    try {
+      const response = await axiosInstance.get<MomSummaryResponse>('/api/mom/summary');
+      return response.data;
+    } catch (error) {
+      handleApiError(error);
+      return { success: false, summary: 'Failed to load summary.' };
+    }
+  },
+
+  getTodayHealth: async (): Promise<MomHealthResponse> => {
+    try {
+      const res = await axiosInstance.get<MomHealthResponse>('/api/mom/health/daily');
+      return res.data;
+    } catch (error) {
+      handleApiError(error);
+      return { success: false, data: [] };
+    }
+  },
+
+  getWeeklyHealth: async (): Promise<MomHealthResponse> => {
+    try {
+      const res = await axiosInstance.get<MomHealthResponse>('/api/mom/health/weekly');
+      return res.data;
+    } catch (error) {
+      handleApiError(error);
+      return { success: false, data: [] };
+    }
+  }
+};
+
+// --- Baby Endpoints ---
+
+export type BabySummaryResponse = {
+  success: boolean;
+  summary: string;
+  next_action: string;
+};
+
+export type BabyWeeklyItem = {
+  date: string;
+  feed_total_ml: number;
+  sleep_total_hours: number;
+  diaper_count: number;
+  bowel_count: number;
+  outside_total_minutes: number;
+};
+
+export type BabyWeeklySummaryResponse = {
+  success: boolean;
+  data: BabyWeeklyItem[];
+};
+
+export type BabyRawDataResponse = {
+  success: boolean;
+  summary: {
+    babyName: string;
+    feed: any[];
+    sleep: any[];
+    diaper: any[];
+    cry: any[];
+    bowel: any[];
+    outside: any[];
+  };
+};
+
+const babyApi = {
+  getDailySummary: async (babyId: string): Promise<BabySummaryResponse> => {
+    try {
+      const res = await axiosInstance.get<BabySummaryResponse>(
+        `/api/baby/health/daily/${babyId}`
+      );
+      return res.data;
+    } catch (error) {
+      handleApiError(error);
+      return { success: false, summary: '', next_action: '' };
+    }
+  },
+
+  getWeeklySummary: async (babyId: string): Promise<BabyWeeklySummaryResponse> => {
+    try {
+      const res = await axiosInstance.get<BabyWeeklySummaryResponse>(
+        `/api/baby/summary/week?baby_id=${babyId}`
+      );
+      return res.data;
+    } catch (error) {
+      handleApiError(error);
+      return { success: false, data: [] };
+    }
+  },
+
+  getRawDailyData: async (babyId: string): Promise<BabyRawDataResponse> => {
+    try {
+      const res = await axiosInstance.get<BabyRawDataResponse>(
+        `/api/baby/health/daily?baby_id=${babyId}`
+      );
+      return res.data;
+    } catch (error) {
+      handleApiError(error);
+      return {
+        success: false,
+        summary: {
+          babyName: '',
+          feed: [],
+          sleep: [],
+          diaper: [],
+          cry: [],
+          bowel: [],
+          outside: []
+        }
+      };
+    }
+  }
+};
+
+
+// --- Emotion Endpoints ---
+
+export type EmotionTodayResponse = {
+  success: boolean;
+  summary: string;
+  emotion_label: string;
+  suggestions: string[];
+  gentle_message: string;
+};
+
+const emotionApi = {
+  getTodayEmotion: async (babyId: string): Promise<EmotionTodayResponse> => {
+    try {
+      const res = await axiosInstance.get<EmotionTodayResponse>(
+        `/api/emotion/today?baby_id=${babyId}`
+      );
+      return res.data;
+    } catch (error) {
+      handleApiError(error);
+      return {
+        success: false,
+        summary: '',
+        emotion_label: '',
+        suggestions: [],
+        gentle_message: ''
+      };
+    }
+  }
+};
+
+// --- Task Endpoints ---

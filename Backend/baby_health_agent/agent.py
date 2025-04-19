@@ -23,39 +23,33 @@ class BabyHealthAgentState(BaseModel):
     baby_id: str
     analysis: str = ""
     next_action: str = ""
+    baby_logs: Optional[List[Dict[str, Any]]] = None  
+    prompt: Optional[str] = None                      
+    llm_response: Optional[str] = None                
 
 # Define the function to fetch baby logs from Supabase
-def fetch_baby_logs(state: BabyHealthAgentState) -> Dict:
+def fetch_baby_logs(state: BabyHealthAgentState) -> BabyHealthAgentState:
     today = datetime.now()
     start_date = today - timedelta(days=7)  # Fetch logs for the last 7 days
     end_date = today
     response = supabase.table("baby_logs").select("*").eq("baby_id", state.baby_id).gte("logged_at", start_date.isoformat()).lte("logged_at", end_date.isoformat()).execute()
-    return {"baby_logs": response.data, "state": state}
+    state.baby_logs = response.data
+    return state
 
 # Define the function to generate prompts for the LLM
-def generate_prompts(data: Dict) -> Dict:
-    baby_logs = data["baby_logs"]
-    state = data["state"]
-    formatted_logs = format_baby_logs(baby_logs)
-    prompt = DEFAULT_PROMPT.format(baby_logs=formatted_logs)
-    return {"prompt": prompt, "state": state}
+def generate_prompts(state: BabyHealthAgentState) -> BabyHealthAgentState:
+    formatted_logs = format_baby_logs(state.baby_logs)
+    state.prompt = DEFAULT_PROMPT.format(baby_logs=formatted_logs)
+    return state
 
-# Define the function to call the LLM (using baby_ai_agent)
-def call_llm(data: Dict) -> Dict:
-    prompt = data["prompt"]
-    state = data["state"]
-    llm_response = call_deepseek_api(prompt)
-    return {"llm_response": llm_response, "state": state}
+def call_llm(state: BabyHealthAgentState) -> BabyHealthAgentState:
+    state.llm_response = call_deepseek_api(state.prompt)
+    return state
 
-# Define the function to parse the LLM response
-def parse_llm_response(data: Dict) -> Dict:
-    llm_response = data["llm_response"]
-    state = data["state"]
-    # Implement your LLM response parsing logic here
-    # This is just a placeholder
-    state.analysis = llm_response
+def parse_llm_response(state: BabyHealthAgentState) -> BabyHealthAgentState:
+    state.analysis = state.llm_response
     state.next_action = "No action needed"
-    return {"state": state}
+    return state
 
 # Define the LangGraph graph
 def create_baby_health_graph():

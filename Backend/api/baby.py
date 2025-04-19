@@ -118,4 +118,4 @@ async def get_baby_health_analysis(baby_id: str, user_id: str = Depends(get_curr
     )
     # result = baby_health_agent(state)
     result = await baby_health_graph.ainvoke(state)
-    return result["state"]
+    return result["llm_response"]

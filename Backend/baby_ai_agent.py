@@ -5,15 +5,20 @@ from supabase import Client, create_client
 from dotenv import load_dotenv
 
 from models import ReminderCreate, BabyLogCreate
-import openai
+from openai import OpenAI
 
 load_dotenv()
 
 DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY")
 
+client = OpenAI(
+    api_key=DEEPSEEK_API_KEY,
+    base_url="https://api.deepseek.com/v1",  # Important: point to DeepSeek
+)
+
 def call_deepseek_api(prompt: str) -> str:
     """
-    Calls the DeepSeek API using the OpenAI library.
+    Calls the DeepSeek API using the OpenAI-compatible ChatCompletion format.
 
     Args:
         prompt: The prompt to send to the API.
@@ -22,19 +27,21 @@ def call_deepseek_api(prompt: str) -> str:
         The LLM response.
     """
     try:
-        openai.api_key = DEEPSEEK_API_KEY
-        response = openai.Completion.create(
-            engine="deepseek-coder",  # Replace with the correct DeepSeek engine
-            prompt=prompt,
-            max_tokens=100,  # Adjust as needed
-            n=1,
-            stop=None,
-            temperature=0.7,  # Adjust as needed
+
+        response = client.chat.completions.create(
+            model="deepseek-chat",
+            messages=[
+                {"role": "system", "content": "You are a helpful assistant."},
+                {"role": "user", "content": prompt}
+            ],
+            temperature=0.7,
+            max_tokens=100
         )
-        return response.choices[0].text.strip()
+        return response.choices[0].message.content.strip()
     except Exception as e:
         print(f"Error calling DeepSeek API: {e}")
         return f"DeepSeek API error: {e}"
+
 
 class BabyAIAgent:
     """

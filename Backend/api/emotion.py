@@ -162,7 +162,7 @@ def get_emotion_trend(user_id: str, baby_id: str, supabase: Client = Depends(get
         .select("hrv, sleep_hours, resting_heart_rate, created_at") \
         .eq("mom_id", user_id) \
         .gte("created_at", start_date.isoformat()) \
-        .order("created_at", asc=True).execute().data
+        .order("created_at").execute().data
 
     # baby logs
     logs = supabase.table("baby_logs") \
@@ -200,23 +200,32 @@ def get_emotion_trend(user_id: str, baby_id: str, supabase: Client = Depends(get
 def get_emotion_milestone(user_id: str, baby_id: str, supabase: Client = Depends(get_supabase)):
     today = date.today()
 
-    # 读取宝宝生日
-    profile = supabase.table("emotion_dates") \
-        .select("baby_birthday") \
-        .eq("mom_id", user_id).eq("baby_id", baby_id).single().execute().data
+    # 安全查询 emotion_dates 表
+    profile_result = supabase.table("emotion_dates") \
+        .select("*") \
+        .eq("mom_id", user_id) \
+        .eq("baby_id", baby_id) \
+        .limit(1) \
+        .execute()
 
+    profile_list = profile_result.data
+    if not profile_list:
+        return {"success": False, "message": "No matching record in emotion_dates"}
+
+    profile = profile_list[0]
     baby_birthday = profile["baby_birthday"]
+
+    # 👶 宝宝出生天数
     birth = datetime.fromisoformat(baby_birthday).date()
     days_since_birth = (today - birth).days
 
-    # 查询连续 emotion_log
+    # 🧠 连续情绪记录
     emotion_data = supabase.table("emotion_log") \
         .select("date") \
         .eq("mom_id", user_id) \
         .gte("date", (today - timedelta(days=30)).isoformat()) \
         .order("date", desc=True).execute().data
 
-    # 连续记录天数
     consecutive = 0
     for i in range(0, 30):
         target = (today - timedelta(days=i)).isoformat()

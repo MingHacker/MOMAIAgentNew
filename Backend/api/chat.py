@@ -1,4 +1,4 @@
-from utils.emotion_utils import is_baby_milestone_tomorrow, count_consecutive_low_sleep, is_mom_birthday_today, days_since_baby_birth, get_baby_months_old, get_baby_birthday, get_mom_birthday, mom_birthday, baby_birthday, weekly_data
+from utils.emotion_utils import is_baby_milestone_tomorrow, count_consecutive_low_sleep, is_mom_birthday_today, days_since_baby_birth, get_baby_months_old, get_baby_birthday, get_mom_birthday, mom_birthday, baby_birthday, weekly_data, generate_celebration_text
 from datetime import date, timedelta, datetime
 from agents.emotionmanager.schema import EmotionAgentState
 from agents.emotionmanager.graph import build_emotion_graph

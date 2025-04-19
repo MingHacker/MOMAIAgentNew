@@ -66,3 +66,6 @@ def get_baby_months_old(birthday: str) -> int:
     today = date.today()
     delta = relativedelta(today, birth)
     return delta.years * 12 + delta.months
+
+def generate_celebration_text(baby_name: str, months_old: int) -> str:
+    return f"{baby_name} turns {months_old} months today! That’s a beautiful milestone worth celebrating 🎉"

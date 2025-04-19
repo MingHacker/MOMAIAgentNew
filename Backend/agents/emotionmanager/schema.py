@@ -12,5 +12,7 @@ class EmotionAgentState(BaseModel):
     emotion_label: Optional[str] = ""
     suggestions: Optional[List[str]] = []
     gentle_message: Optional[str] = ""
+    celebration_text: Optional[str] = "" 
 
-celebration_text: Optional[str] = ""
+
+

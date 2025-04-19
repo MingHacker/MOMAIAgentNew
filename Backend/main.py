@@ -16,8 +16,8 @@ from contextlib import asynccontextmanager # For lifespan events
 from apscheduler.schedulers.asyncio import AsyncIOScheduler # For background tasks
 from apscheduler.triggers.interval import IntervalTrigger
 
-from agents.baby_manager import get_baby_health_today, call_gpt_baby_analysis
-from agents.mom_manager import get_mom_health_today, call_gpt_mom_analysis
+#from agents.baby_manager import get_baby_health_today, call_gpt_baby_analysis
+#from agents.mom_manager import get_mom_health_today, call_gpt_mom_analysis
 
 from api.mom import router as mom_router
 from api.task import router as task_router

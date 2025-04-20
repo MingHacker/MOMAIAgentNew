@@ -2,7 +2,7 @@ import json
 from fastapi.responses import JSONResponse
 from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi.security import HTTPBearer
 from fastapi.encoders import jsonable_encoder
 from pydantic import BaseModel
 from datetime import datetime, timezone
@@ -15,7 +15,7 @@ from baby_ai_agent import BabyAIAgent
 from contextlib import asynccontextmanager # For lifespan events
 from apscheduler.schedulers.asyncio import AsyncIOScheduler # For background tasks
 from apscheduler.triggers.interval import IntervalTrigger
-
+from core.auth import get_current_user
 #from agents.baby_manager import get_baby_health_today, call_gpt_baby_analysis
 #from agents.mom_manager import get_mom_health_today, call_gpt_mom_analysis
 
@@ -143,24 +143,6 @@ class CompleteReminderByLog(BaseModel):
     baby_id: str
     log_type: str
 
-# --- Authentication ---
-async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
-    try:
-        token = credentials.credentials
-        decoded = jwt.decode(
-            token,
-            os.getenv("SUPABASE_KEY"),
-            algorithms=["HS256"],
-            audience="authenticated",
-            issuer=f"{os.getenv('SUPABASE_URL')}/auth/v1",
-            options={"verify_signature": False}
-        )
-        return decoded["sub"]
-    except jwt.PyJWTError:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid authentication credentials",
-        )
 
 # --- Helper Functions ---
 async def _verify_baby_ownership(baby_id: str, user_id: str):

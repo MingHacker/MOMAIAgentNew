@@ -2,7 +2,6 @@ from utils.emotion_utils import is_baby_milestone_tomorrow, count_consecutive_lo
 from datetime import date, timedelta, datetime
 from agents.emotionmanager.schema import EmotionAgentState
 from agents.emotionmanager.graph import build_emotion_graph
-from supabase import Client
 from fastapi import Body, Depends
 from fastapi.responses import JSONResponse
 from fastapi import APIRouter, Depends, Query, HTTPException, status
@@ -13,7 +12,6 @@ from agents.emotionmanager.steps import get_baby_months_old
 from pydantic import BaseModel
 from typing import List, Dict, Optional
 from openai import OpenAI
-from core.auth import get_current_user
 import os
 from dotenv import load_dotenv
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
@@ -160,17 +158,10 @@ async def save_chat_message(chat_message: ChatMessage, user_id: str = Depends(ge
 @router.get("/chat/history", response_model=List[ChatMessage])
 async def get_chat_history(user_id: str = Depends(get_current_user),limit: int = 50):
     try:
-        # 获取 mom_id
-        mom_result = supabase.table("mom_profiles").select("id").eq("user_id", user_id).single().execute()
-        if not mom_result.data:
-            raise HTTPException(status_code=404, detail="Mom profile not found")
-        
-        mom_id = mom_result.data["id"]
-        
         # 获取聊天历史
         result = supabase.table("chat_logs")\
             .select("*")\
-            .eq("mom_id", mom_id)\
+            .eq("mom_id", user_id)\
             .order("timestamp", desc=True)\
             .limit(limit)\
             .execute()
@@ -181,11 +172,7 @@ async def get_chat_history(user_id: str = Depends(get_current_user),limit: int =
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/chat/send", response_model=ChatResponse)
-async def send_chat_message(
-    chat_message: ChatMessage,
-    user_id: str = Depends(get_current_user),
-    supabase: Client = Depends(get_supabase)
-):
+async def send_chat_message(chat_message: ChatMessage, user_id: str = Depends(get_current_user)):
     try:
 
         

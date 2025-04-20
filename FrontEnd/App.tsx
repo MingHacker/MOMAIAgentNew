@@ -11,6 +11,10 @@ import TaskManagerScreen from './screens/TaskManagerScreen';
 import HealthSummaryScreen from './screens/SummaryScreen';
 import InitialInfoScreen from './screens/InitialInfoScreen';
 import LoginScreen from './screens/LoginScreen';
+import { createDrawerNavigator } from '@react-navigation/drawer';
+
+
+
 
 type AuthContextType = {
   isAuthenticated: boolean;
@@ -22,11 +26,12 @@ const AuthContext = createContext<AuthContextType>(null!);
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
+const Drawer = createDrawerNavigator(); // ✅ 添加 Drawer
 
+// ✅ 原始底部导航
 function TabNavigator() {
   return (
     <Tab.Navigator>
-      <Tab.Screen name="Dashboard" component={DashboardScreen} />
       <Tab.Screen name="QAChat" component={QAChat} />
       <Tab.Screen name="TaskManager" component={TaskManagerScreen} />
       <Tab.Screen name="Summary" component={HealthSummaryScreen} />
@@ -36,6 +41,16 @@ function TabNavigator() {
         initialParams={{ userId: '123' }}
       />
     </Tab.Navigator>
+  );
+}
+
+// ✅ 新增：Drawer 包住 Tab + Dashboard
+function DrawerNavigator() {
+  return (
+    <Drawer.Navigator id={undefined} screenOptions={{ headerShown: false }}>
+      <Drawer.Screen name="Dashboard" component={DashboardScreen} />
+      <Drawer.Screen name="MainTabs" component={TabNavigator} />
+    </Drawer.Navigator>
   );
 }
 
@@ -58,7 +73,6 @@ export default function App() {
   }, []);
 
   const login = async (email: string) => {
-    // Here, you might want to fetch user data or perform additional actions
     setIsAuthenticated(true);
   };
 
@@ -67,9 +81,7 @@ export default function App() {
     setIsAuthenticated(false);
   };
 
-  if (isLoading) {
-    return null; // Or a loading spinner
-  }
+  if (isLoading) return null;
 
   return (
     <AuthContext.Provider value={{ isAuthenticated, login, logout }}>
@@ -79,7 +91,7 @@ export default function App() {
             {isAuthenticated ? (
               <Stack.Screen
                 name="Main"
-                component={TabNavigator}
+                component={DrawerNavigator} // ✅ 使用 DrawerNavigator 替代 TabNavigator
                 options={{ headerShown: false }}
               />
             ) : (

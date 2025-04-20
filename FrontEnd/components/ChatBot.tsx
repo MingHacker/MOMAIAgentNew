@@ -224,78 +224,80 @@ const ChatBot = () => {
         animationType="slide"
         transparent={true}
         onRequestClose={handleModalClose}
-      >
+        >
         <View style={styles.modalContainer}>
-          <View style={styles.chatContainer}>
-            <View style={styles.header}>
-              <View style={styles.headerContent}>
-                <Icon name="robot-happy" size={24} color="#8B5CF6" />
-                <Text style={styles.headerText}>MOM AI Assistant</Text>
-              </View>
-              <TouchableOpacity onPress={handleModalClose}>
-                <Icon name="close" size={24} color="#8B5CF6" />
-              </TouchableOpacity>
-            </View>
-
-            <View style={styles.quickBubblesContainer}>
-              <FlatList
-                data={QUICK_BUBBLES}
-                numColumns={2}
-                keyExtractor={(item) => item.action}
-                renderItem={({ item }) => (
-                  <TouchableOpacity
-                    style={styles.quickBubble}
-                    onPress={() => handleQuickBubble(item.action)}
-                  >
-                    <Icon name={item.icon} size={24} color="#8B5CF6" style={styles.bubbleIcon} />
-                    <Text style={styles.quickBubbleText}>{item.text}</Text>
-                  </TouchableOpacity>
-                )}
-              />
-            </View>
-
-            <View style={styles.messagesContainer}>
-              <FlatList
-                data={messages}
-                keyExtractor={(item) => item.id}
-                renderItem={({ item }) => (
-                  <View
-                    style={[
-                      styles.messageBubble,
-                      item.isUser ? styles.userBubble : styles.botBubble,
-                    ]}
-                  >
-                    <Text style={styles.messageText}>{item.text}</Text>
-                    <Text style={styles.timestamp}>{item.timestamp}</Text>
-                  </View>
-                )}
-                contentContainerStyle={styles.messagesList}
-              />
-            </View>
-
             <KeyboardAvoidingView
-              behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-              keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
-              style={styles.inputContainer}
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+            keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
+            style={{ flex: 1 }}
             >
-              <TextInput
-                style={styles.input}
-                value={inputText}
-                onChangeText={setInputText}
-                placeholder="Type a message..."
-                placeholderTextColor="#999"
-              />
-              <TouchableOpacity
-                style={styles.sendButton}
-                onPress={handleSend}
-                disabled={isLoading}
-              >
-                <Icon name="send" size={20} color="#8B5CF6" />
-              </TouchableOpacity>
+            <View style={styles.chatContainer}>
+                <View style={styles.header}>
+                <View style={styles.headerContent}>
+                    <Icon name="robot-happy" size={24} color="#8B5CF6" />
+                    <Text style={styles.headerText}>MOM AI Assistant</Text>
+                </View>
+                <TouchableOpacity onPress={handleModalClose}>
+                    <Icon name="close" size={24} color="#8B5CF6" />
+                </TouchableOpacity>
+                </View>
+
+                <View style={styles.quickBubblesContainer}>
+                <FlatList
+                    data={QUICK_BUBBLES}
+                    numColumns={2}
+                    keyExtractor={(item) => item.action}
+                    renderItem={({ item }) => (
+                    <TouchableOpacity
+                        style={styles.quickBubble}
+                        onPress={() => handleQuickBubble(item.action)}
+                    >
+                        <Icon name={item.icon} size={24} color="#8B5CF6" style={styles.bubbleIcon} />
+                        <Text style={styles.quickBubbleText}>{item.text}</Text>
+                    </TouchableOpacity>
+                    )}
+                />
+                </View>
+
+                <View style={styles.messagesContainer}>
+                <FlatList
+                    data={messages}
+                    keyExtractor={(item) => item.id}
+                    renderItem={({ item }) => (
+                    <View
+                        style={[
+                        styles.messageBubble,
+                        item.isUser ? styles.userBubble : styles.botBubble,
+                        ]}
+                    >
+                        <Text style={styles.messageText}>{item.text}</Text>
+                        <Text style={styles.timestamp}>{item.timestamp}</Text>
+                    </View>
+                    )}
+                    contentContainerStyle={styles.messagesList}
+                />
+                </View>
+
+                <View style={styles.inputContainer}>
+                <TextInput
+                    style={styles.input}
+                    value={inputText}
+                    onChangeText={setInputText}
+                    placeholder="Type a message..."
+                    placeholderTextColor="#999"
+                />
+                <TouchableOpacity
+                    style={styles.sendButton}
+                    onPress={handleSend}
+                    disabled={isLoading}
+                >
+                    <Icon name="send" size={20} color="#8B5CF6" />
+                </TouchableOpacity>
+                </View>
+            </View>
             </KeyboardAvoidingView>
-          </View>
         </View>
-      </Modal>
+        </Modal>
     </>
   );
 };
@@ -420,13 +422,8 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: '#f0f0f0',
     backgroundColor: '#fff',
-    paddingBottom: Platform.OS === 'ios' ? 30 : 16,
-    position: 'absolute',
-    bottom: 50,
-    left: 0,
-    right: 0,
-    zIndex: 1,
   },
+  
   input: {
     flex: 1,
     height: 50,

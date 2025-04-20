@@ -46,13 +46,9 @@ def estimate_score(emotion_label: str, target_emotion: str) -> int:
     else:
         return 50
 
-@router.post("/api/chat/emotion")
-def emotion_chat_handler(
-    user_id: str = Body(...),
-    baby_id: str = Body(...),
-    task_count: int = Body(default=0),
-    supabase: Client = Depends(get_supabase)
-):
+@router.post("/api/chat/emotion", status_code=status.HTTP_200_OK)
+async def emotion_chat_handler(baby_id: str, user_id: str = Depends(get_current_user),
+    task_count: int = Body(default=0)):
     today = date.today()
 
     # 1. 获取 mom + baby + emotion_dates 数据
@@ -134,10 +130,7 @@ def emotion_chat_handler(
     }
 
 @router.post("/chat/save", response_model=ChatResponse)
-async def save_chat_message(
-    chat_message: ChatMessage,
-    user_id: str = Depends(get_current_user)
-):
+async def save_chat_message(chat_message: ChatMessage, user_id: str = Depends(get_current_user)):
     try:
         # 获取 mom_id
         mom_result = supabase.table("mom_profiles").select("id").eq("user_id", user_id).single().execute()
@@ -165,10 +158,7 @@ async def save_chat_message(
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/chat/history", response_model=List[ChatMessage])
-async def get_chat_history(
-    user_id: str = Depends(get_current_user),
-    limit: int = 50
-):
+async def get_chat_history(user_id: str = Depends(get_current_user),limit: int = 50):
     try:
         # 获取 mom_id
         mom_result = supabase.table("mom_profiles").select("id").eq("user_id", user_id).single().execute()
@@ -197,16 +187,11 @@ async def send_chat_message(
     supabase: Client = Depends(get_supabase)
 ):
     try:
-        # 获取 mom_id
-        mom_result = supabase.table("mom_profiles").select("id").eq("user_id", user_id).single().execute()
-        if not mom_result.data:
-            raise HTTPException(status_code=404, detail="Mom profile not found")
-        
-        mom_id = mom_result.data["id"]
+
         
         # 保存用户消息
         user_result = supabase.table("chat_logs").insert({
-            "mom_id": mom_id,
+            "mom_id": get_current_user(),
             "role": "user",
             "message": chat_message.message,
             "source": "chatbot",
@@ -238,7 +223,7 @@ async def send_chat_message(
         
         # 保存 AI 回复
         ai_result = supabase.table("chat_logs").insert({
-            "mom_id": mom_id,
+            "mom_id": get_current_user(),
             "role": "assistant",
             "message": ai_message,
             "source": "chatbot",

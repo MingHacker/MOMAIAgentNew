@@ -70,3 +70,21 @@ Tone: Kind, Encouraging, Gentle, Celebratory
 
 Only return the message (no JSON).
 """
+
+task_detect_prompt_template = """
+你是一个妈妈助手。请从以下对话中识别是否有具体任务，并输出标准 JSON：
+
+对话内容：
+“{{ text }}”
+
+输出格式：
+{
+  "tasks": [
+    {
+      "title": "准备宝宝疫苗物品",
+      "due_date": "2025-04-20",
+      "category": "family"
+    }
+  ]
+}
+"""

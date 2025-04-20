@@ -9,9 +9,27 @@ from fastapi import APIRouter, Depends, Query, HTTPException, status
 from core.supabase import get_supabase
 from agents.emotion_manager import get_mom_health_today, get_baby_health_today
 from agents.emotionmanager.steps import get_baby_months_old
+from pydantic import BaseModel
+from typing import List, Optional
+from ..main import supabase, get_current_user
+from openai import OpenAI
+import os
+from dotenv import load_dotenv
 
 router = APIRouter()
 
+load_dotenv()
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
+class ChatMessage(BaseModel):
+    message: str
+    role: str
+    emotion_label: Optional[str] = None
+    source: str = "chatbot"
+
+class ChatResponse(BaseModel):
+    success: bool
+    message: str
 
 # 用法举例
 # 🎂 明日提醒
@@ -95,7 +113,7 @@ def emotion_chat_handler(
     fatigue_days = count_consecutive_low_sleep(weekly_data)
     fatigue_reinforcement = ""
     if fatigue_days >= 2:
-        fatigue_reinforcement = f"You’ve had {fatigue_days} tough days in a row. I see your effort, and I’m proud of your persistence. 💛"
+        fatigue_reinforcement = f"You've had {fatigue_days} tough days in a row. I see your effort, and I'm proud of your persistence. ��"
 
     # 6. 判断今天是否是妈妈生日
     mom_birthday_message = ""
@@ -113,3 +131,122 @@ def emotion_chat_handler(
         "fatigue_reinforcement": fatigue_reinforcement,
         "mom_birthday_message": mom_birthday_message
     }
+
+@router.post("/chat/save", response_model=ChatResponse)
+async def save_chat_message(
+    chat_message: ChatMessage,
+    user_id: str = Depends(get_current_user)
+):
+    try:
+        # 获取 mom_id
+        mom_result = supabase.table("mom_profiles").select("id").eq("user_id", user_id).single().execute()
+        if not mom_result.data:
+            raise HTTPException(status_code=404, detail="Mom profile not found")
+        
+        mom_id = mom_result.data["id"]
+        
+        # 保存聊天记录
+        result = supabase.table("chat_logs").insert({
+            "mom_id": mom_id,
+            "role": chat_message.role,
+            "message": chat_message.message,
+            "emotion_label": chat_message.emotion_label,
+            "source": chat_message.source,
+            "timestamp": datetime.now().isoformat()
+        }).execute()
+        
+        if not result.data:
+            raise HTTPException(status_code=500, detail="Failed to save chat message")
+            
+        return ChatResponse(success=True, message="Chat message saved successfully")
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/chat/history", response_model=List[ChatMessage])
+async def get_chat_history(
+    user_id: str = Depends(get_current_user),
+    limit: int = 50
+):
+    try:
+        # 获取 mom_id
+        mom_result = supabase.table("mom_profiles").select("id").eq("user_id", user_id).single().execute()
+        if not mom_result.data:
+            raise HTTPException(status_code=404, detail="Mom profile not found")
+        
+        mom_id = mom_result.data["id"]
+        
+        # 获取聊天历史
+        result = supabase.table("chat_logs")\
+            .select("*")\
+            .eq("mom_id", mom_id)\
+            .order("timestamp", desc=True)\
+            .limit(limit)\
+            .execute()
+            
+        return result.data
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/chat/send", response_model=ChatResponse)
+async def send_chat_message(
+    chat_message: ChatMessage,
+    user_id: str = Depends(get_current_user)
+):
+    try:
+        # 获取 mom_id
+        mom_result = supabase.table("mom_profiles").select("id").eq("user_id", user_id).single().execute()
+        if not mom_result.data:
+            raise HTTPException(status_code=404, detail="Mom profile not found")
+        
+        mom_id = mom_result.data["id"]
+        
+        # 保存用户消息
+        user_result = supabase.table("chat_logs").insert({
+            "mom_id": mom_id,
+            "role": "user",
+            "message": chat_message.message,
+            "source": "chatbot",
+            "timestamp": datetime.now().isoformat()
+        }).execute()
+        
+        if not user_result.data:
+            raise HTTPException(status_code=500, detail="Failed to save user message")
+        
+        # 调用 OpenAI 获取回复
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "system", "content": """你是一个温柔体贴的 AI 助手，专门帮助新手妈妈。
+                你的回复要充满同理心，语气要温暖柔和。
+                使用简单的语言，避免专业术语。
+                在适当的时候使用表情符号增加亲和力。
+                如果妈妈表达负面情绪，要给予理解和鼓励。
+                如果妈妈分享快乐，要真诚地分享喜悦。
+                保持积极乐观的态度，但不要过度乐观。
+                回复要简短，控制在 2-3 句话内。"""},
+                {"role": "user", "content": chat_message.message}
+            ],
+            temperature=0.7,
+            max_tokens=150
+        )
+        
+        ai_message = response.choices[0].message.content
+        
+        # 保存 AI 回复
+        ai_result = supabase.table("chat_logs").insert({
+            "mom_id": mom_id,
+            "role": "assistant",
+            "message": ai_message,
+            "source": "chatbot",
+            "timestamp": datetime.now().isoformat()
+        }).execute()
+        
+        if not ai_result.data:
+            raise HTTPException(status_code=500, detail="Failed to save AI message")
+            
+        return ChatResponse(success=True, message=ai_message)
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

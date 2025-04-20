@@ -1,7 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const app = express();
-const port = 3000;
+const port = 8000;
 
 app.use(cors());
 app.use(express.json());
@@ -127,6 +127,6 @@ app.post('/api/record/outside', (req, res) => {
   console.log('🚶‍♀️ 收到外出记录:', req.body);
   res.json({ success: true });
 });
-app.listen(3000, '0.0.0.0', () => {
-  console.log('✅ Server running at http://10.0.0.23:3000');
+app.listen(8000, '0.0.0.0', () => {
+  console.log('✅ Server running at http://10.0.0.23:8000');
 });

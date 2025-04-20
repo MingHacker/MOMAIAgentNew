@@ -3,8 +3,13 @@ from jinja2 import Template
 import json
 import re
 from .schema import EmotionAgentState
-from .prompts import emotion_prompt_narrative as emotion_prompt, gentle_message_prompt_cn as gentle_message_prompt, celebration_prompt
+from .prompts import emotion_prompt_narrative as emotion_prompt, gentle_message_prompt_cn as gentle_message_prompt, celebration_prompt, task_detect_prompt_template
 from datetime import date, datetime
+from core.supabase import get_supabase
+from agents.llm import call_gpt_json_async
+
+
+supabase = get_supabase()
 client = OpenAI()
 
 def extract_json(text: str) -> dict:
@@ -88,6 +93,26 @@ async def generate_gentle_message_step(state: EmotionAgentState) -> EmotionAgent
     parsed = extract_json(content)
     state.gentle_message = replace_template_variables(parsed.get("message", content.strip()), template_data)
     return state
+
+async def detect_task_from_chat_step(state: EmotionAgentState) -> EmotionAgentState:
+    user_input = state.user_text
+    prompt = task_detect_prompt_template.render(text=user_input)
+
+    response = await call_gpt_json_async(prompt)
+    state.extracted_tasks = response.get("tasks", [])
+    return state
+
+async def store_task_to_db_step(state: EmotionAgentState) -> EmotionAgentState:
+    for task in state.extracted_tasks:
+        supabase.table("tasks_main").insert({
+            "mom_id": state.user_id,
+            "main_task": task["title"],
+            "due_date": task.get("due_date", str(date.today())),
+            "category": task.get("category", "other"),
+            "status": "pending"
+        }).execute()
+    return state
+
 
 def get_baby_months_old(birthday: str) -> int:
     today = date.today()

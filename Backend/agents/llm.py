@@ -4,13 +4,60 @@ from openai import OpenAI
 
 client = OpenAI()
 
+def call_gpt_json_newversion(prompt: str) -> Dict:
+    try:
+        print("📨 正在调用 GPT...")
+        print("📝 Prompt:", prompt)
+
+        response = client.chat.completions.create(
+            model="gpt-4o",
+            messages=[
+                {
+                    "role": "system",
+                    "content": [
+                        {"type": "text", "text": "你是一个温柔体贴的 AI 助手，只返回 JSON 结构，格式如下：{\"message\": \"...\"}，不要多余说明。"}
+                    ]
+                },
+                {
+                    "role": "user",
+                    "content": [
+                        {"type": "text", "text": prompt}
+                    ]
+                }
+            ],
+            temperature=0.6,
+            max_tokens=300
+        )
+
+        content = response.choices[0].message.content.strip()
+        print("📬 GPT 回复内容:", content)
+
+        # 尝试找到 JSON 起始部分
+        json_start = content.find("{")
+        if json_start == -1:
+            print("❌ 未找到 JSON 内容")
+            return {"message": content}
+
+        json_str = content[json_start:]
+        try:
+            result = json.loads(json_str)
+            return result if isinstance(result, dict) else {"message": content}
+        except json.JSONDecodeError as e:
+            print("❌ JSON 解析失败:", str(e))
+            return {"message": content}
+
+    except Exception as e:
+        print("❌ GPT 调用失败:", str(e))
+        return {"message": "🤖 出现错误，稍后再试"}
+    
+
 def call_gpt_json(prompt: str) -> dict:
     try:
         print("📨 正在调用 GPT...")
         print("📝 Prompt:", prompt)
         
         response = client.chat.completions.create(
-            model="gpt-4",
+            model="gpt-4o-mini",
             messages=[
                 {"role": "system", "content": "你是一个善于将任务结构化的生活助理，只返回 JSON 格式的任务列表"},
                 {"role": "user", "content": prompt}
@@ -21,12 +68,11 @@ def call_gpt_json(prompt: str) -> dict:
         content = response.choices[0].message.content
         print("📬 GPT 回复内容:", content)
 
-        # 提取 JSON（只保留可能是 JSON 的部分）
         json_start = content.find("{")
         if json_start == -1:
             print("❌ 未找到 JSON 内容")
             return {"tasks": []}
-            
+        
         json_str = content[json_start:]
         try:
             result = json.loads(json_str)
@@ -41,6 +87,8 @@ def call_gpt_json(prompt: str) -> dict:
     except Exception as e:
         print("❌ GPT 调用失败:", str(e))
         return {"tasks": []}
+
+
 #def call_gpt_json(prompt: str) -> Dict:
 #    print("🧠 模拟调用 GPT Prompt:\n", prompt)
 #    return {

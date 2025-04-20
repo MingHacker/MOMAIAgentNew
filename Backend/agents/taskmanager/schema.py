@@ -2,16 +2,16 @@
 from typing import TypedDict, Optional, Dict, Any, List, Literal
 
 class TaskManagerInput(TypedDict):
-    user_id: str
+    task_id: str
     input_text: str
     mom_health_status: Optional[Dict[str, Any]]
     baby_health_status: Optional[Dict[str, Any]]
 
-class SubTaskItem(TypedDict):
-    task_id: str
-    title: str
-    due_date: str
-    status: Literal["pending", "completed"]
+# class SubTaskItem(TypedDict):
+#     task_id: str
+#     title: str
+#     due_date: str
+#     status: Literal["pending", "completed"]
 
 class Reminder(TypedDict):
     time: str
@@ -24,7 +24,7 @@ class TaskItem(TypedDict):
     priority: Optional[Literal["low", "medium", "high"]]
     category: Optional[str]
     status: Literal["pending", "completed"]
-    sub_tasks: Optional[List[SubTaskItem]]
+    parent_id: Optional[str]
     reminder: Optional[Reminder]
 
 class TaskManagerOutput(TypedDict):

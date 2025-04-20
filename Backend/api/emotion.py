@@ -15,16 +15,13 @@ from dotenv import load_dotenv
 import jwt
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi import HTTPException, status
-from supabase import create_client
+from core.supabase import get_supabase
 
 router = APIRouter()
 
 load_dotenv()
 
-supabase_url = os.getenv("SUPABASE_URL")
-supabase_key = os.getenv("SUPABASE_KEY")
-
-supabase: Client = create_client(supabase_url, supabase_key)
+supabase = get_supabase()
 
 router = APIRouter()
 
@@ -56,23 +53,14 @@ async def get_today_emotion(baby_id: str, user_id: str = Depends(get_current_use
 
         # ✅ 0. 查询今天已完成任务数
         main_result = (
-                supabase.table("tasks_main")
+                supabase.table("tasks")
                 .select("task_id")
                 .eq("mom_id", user_id)
                 .eq("status", "completed")
                 .gte("complete_date", today_str)
                 .execute()
             )
-
-            # 查询子任务完成数
-        sub_result = (
-                supabase.table("tasks_sub")
-                .select("sub_task_id")
-                .eq("mom_id", user_id)
-                .eq("status", "completed")
-                .gte("complete_date", today_str)
-                .execute()
-            )
+        
         task_count = len(main_result.data) + len(sub_result.data)
 
         # ✅ 1. 查询 mom 健康数据

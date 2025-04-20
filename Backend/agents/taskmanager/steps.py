@@ -6,6 +6,8 @@ from pydantic import BaseModel
 from agents.taskmanager.prompts import build_task_prompt
 from .schema import TaskManagerInput, TaskManagerOutput, TaskItem
 from agents.llm import call_gpt_json
+from core.supabase import get_supabase
+
 
 def test_build_prompt():
     prompt_str = build_task_prompt(
@@ -21,8 +23,8 @@ def task_manager_node(input: TaskManagerInput) -> TaskManagerOutput:
         # 1️⃣ 构建 prompt
         prompt_str = build_task_prompt(
             input_text=input["input_text"],
-            mom_health_status=input.get("mom_health_status", {}),
-            baby_health_status=input.get("baby_health_status", {})
+            mom_health_status=input["mom_health_status"],
+            baby_health_status=input["baby_health_status"]
         )
 
         # 2️⃣ 调 GPT
@@ -35,19 +37,20 @@ def task_manager_node(input: TaskManagerInput) -> TaskManagerOutput:
         # 3️⃣ 解析成内部完整结构（可选）
         parsed_tasks: List[TaskItem] = []
         for task in gpt_result["tasks"]:
-            task_id = str(uuid.uuid4())
-            parsed_tasks.append(
-                {  # 这里仍然保留全部字段，后续想用随时有
-                    "task_id": task_id,
-                    "title": task.get("title", "未命名任务"),
-                    "due_date": safe_parse_datetime(task.get("due_date")),
-                    "priority": task.get("priority", "medium"),
-                    "category": task.get("category", "mom"),
-                    "status": task.get("status", "pending"),
-                    "sub_tasks": None,
-                    "reminder": None
-                }
-            )
+            subTask = TaskItem()
+            subTask["title"] = task.get("title", "未命名任务")
+            subTask["due_date"] = safe_parse_datetime(task.get("due_date"))     # 解析日期
+            subTask["priority"] = task.get("priority", "medium")  # 默认中等优先级
+            subTask["category"] = task.get("category", "mom")  # 默认分类为妈妈
+            subTask["status"] = task.get("status", "pending")  # 默认状态为待办
+            subTask["reminder"] = None  # 提醒默认为空
+            subTask["parent_id"] = input["task_id"]  
+
+            # get_supabase().client.table("tasks").insert(subTask).execute()
+
+            parsed_tasks.append(subTask)
+
+
 
         # 4️⃣ ⬇️ **裁剪**成前端想要的极简格式
         slim_tasks: List[Dict[str, str]] = [

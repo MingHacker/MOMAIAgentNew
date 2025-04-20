@@ -13,10 +13,10 @@ def task_node_step(state: Dict[str, Any]) -> TaskManagerOutput:
     """
     # 转成 TypedDict 调用核心步骤
     ti = TaskManagerInput(
-        user_id=state["user_id"],
+        task_id=state["task_id"],
         input_text=state["input_text"],
-        mom_health_status=state.get("mom_health_status", {}),
-        baby_health_status=state.get("baby_health_status", {}),
+        mom_health_status=state["mom_health_status"],
+        baby_health_status=state["baby_health_status"],
     )
     # 直接返回解析后的 TaskManagerOutput
     return task_manager_node(ti)

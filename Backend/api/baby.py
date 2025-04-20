@@ -7,8 +7,6 @@ from agents.babymanager.schema import BabyAgentState
 from agents.babymanager.graph import build_baby_manager_graph
 from datetime import datetime, timedelta
 from typing import Dict, List
-from supabase import create_client, Client
-from dotenv import load_dotenv
 import jwt
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from typing import Dict, Any
@@ -19,15 +17,9 @@ from agents.baby_manager import get_baby_health_today
 from core.supabase import get_supabase
 from agents.baby_manager import call_gpt_baby_analysis
 
-load_dotenv()
-
-supabase_url = os.getenv("SUPABASE_URL")
-supabase_key = os.getenv("SUPABASE_KEY")
-
-supabase: Client = create_client(supabase_url, supabase_key)
 
 router = APIRouter()
-
+supabase = get_supabase()
 security = HTTPBearer()
 
 async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
@@ -60,13 +52,9 @@ def get_weekly_baby_summary(baby_id: str, user_id: str = Depends(get_current_use
         today = datetime.utcnow().date()
         start_date = today - timedelta(days=6)  # 包含今天，共7天
 
-        logs_result = (
-            supabase
-            .table("baby_logs")
-            .select("log_type, log_data, logged_at")
-            .eq("baby_id", baby_id)
-            .gte("logged_at", start_date.isoformat())
-            .execute()
+        logs_result = supabase.query(
+            "baby_logs",
+            {"baby_id": baby_id}
         )
 
         daily_summary = {}
@@ -127,7 +115,7 @@ def get_weekly_baby_summary(baby_id: str, user_id: str = Depends(get_current_use
 @router.get("/api/baby/health/daily", status_code=status.HTTP_200_OK)
 async def get_baby_health_daily(baby_id: str, user_id: str = Depends(get_current_user)):
     try:
-        analysis: Dict[str, Any] = get_baby_health_today(baby_id, supabase)
+        analysis: Dict[str, Any] = get_baby_health_today(baby_id, supabase.client)
         return {"success": True, "summary": analysis}
     except Exception as e:
         return JSONResponse(status_code=500, content={"success": False, "summary": str(e)})
@@ -137,7 +125,7 @@ async def get_baby_health_daily(baby_id: str, user_id: str = Depends(get_current
 @router.get("/api/baby/summary", status_code=status.HTTP_200_OK)
 def get_today_baby_summary(baby_id: str, user_id: str = Depends(get_current_user)):
     try:
-        data = get_baby_health_today(baby_id, supabase)
+        data = get_baby_health_today(baby_id, supabase.client)
         print(f"✅ 获取到的宝宝数据: {data}")
 
         if not data or all(len(v) == 0 for k, v in data.items() if k != "babyName"):
@@ -147,7 +135,7 @@ def get_today_baby_summary(baby_id: str, user_id: str = Depends(get_current_user
             )
 
         # 调用 GPT 分析
-        result = call_gpt_baby_analysis(baby_id, supabase)
+        result = call_gpt_baby_analysis(baby_id, supabase.client)
         return {
             "success": True,
             "summary": result["summary"],

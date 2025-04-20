@@ -30,7 +30,6 @@ export default function LoginScreen() {
       const success = await api.login({ email, password });
       if (success) {
         await login(email);
-
       } else {
         Alert.alert('登录失败', '用户名或密码错误');
       }

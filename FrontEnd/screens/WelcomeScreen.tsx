@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { View, Text, Animated, StyleSheet } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, StackActions } from '@react-navigation/native';
 
 export default function WelcomeScreen() {
   const navigation = useNavigation();
@@ -14,10 +14,10 @@ export default function WelcomeScreen() {
       useNativeDriver: true,
     }).start();
 
-    // 2 秒后跳转到 InitialInfo
+    // 3 秒后跳转到 Login
     const timer = setTimeout(() => {
-      navigation.navigate('InitialInfo');
-    }, 2000);
+      navigation.dispatch(StackActions.replace('Login'));
+    }, 3000);
 
     return () => clearTimeout(timer);
   }, []);
@@ -25,7 +25,13 @@ export default function WelcomeScreen() {
   return (
     <View style={styles.container}>
       <Animated.Text style={[styles.text, { opacity: fadeAnim }]}>
-        👶 Welcome to Mom AI
+        🎀 ˖⁺‧₊˚ ♡ ˚₊‧⁺˖
+      </Animated.Text>
+      <Animated.Text style={[styles.text, { opacity: fadeAnim }]}>
+        Welcome to Mom AI
+      </Animated.Text>
+      <Animated.Text style={[styles.text, { opacity: fadeAnim }]}>
+        ₊˚⊹♡ ˚₊‧⁺˖ 🌸
       </Animated.Text>
     </View>
   );
@@ -33,9 +39,17 @@ export default function WelcomeScreen() {
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#F3E8FF',
+    flex: 1, 
+    justifyContent: 'center', 
+    alignItems: 'center', 
+    backgroundColor: '#F3E8FF',
   },
   text: {
-    fontSize: 28, fontWeight: '600', color: '#4C3575',
+    fontSize: 28, 
+    fontWeight: '600', 
+    color: '#4C3575',
+    marginVertical: 5,
+    textAlign: 'center',
+    letterSpacing: 1,
   },
 });

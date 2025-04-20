@@ -9,22 +9,33 @@ import {
 } from 'react-native';
 import { api } from '../src/api';
 import { useAuth } from '../App';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+
+type RootStackParamList = {
+  Main: undefined;
+  Login: undefined;
+};
+
+type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const { login } = useAuth();
+  const navigation = useNavigation<NavigationProp>();
 
   const handleSubmit = async () => {
     try {
       const success = await api.login({ email, password });
       if (success) {
-        login(email);
+        await login(email);
+        navigation.navigate('Main');
       } else {
-        Alert.alert('Login Failed', 'Invalid credentials');
+        Alert.alert('登录失败', '用户名或密码错误');
       }
     } catch (error) {
-      Alert.alert('Login Failed', 'An unexpected error occurred');
+      Alert.alert('登录失败', '发生意外错误');
     }
   };
 

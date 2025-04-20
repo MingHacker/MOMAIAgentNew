@@ -1,13 +1,26 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, Button, Switch, StyleSheet } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import type { StackNavigationProp } from '@react-navigation/stack';
 import RecommendedFeaturesScreen from './RecommandFeatureScreen';
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+type RootStackParamList = {
+  Main: undefined;
+  Welcome: undefined;
+  Login: undefined;
+  InitialInfo: undefined;
+  RecommendedFeatures: {
+    userId: string;
+    timestamp: number;
+  };
+};
+
+type NavigationProp = StackNavigationProp<RootStackParamList>;
 
 const InitialInfoScreen = () => {
-  const navigation = useNavigation();
+  const navigation = useNavigation<NavigationProp>();
 
   const [userId, setUserId] = useState('123');
   const [isPregnant, setIsPregnant] = useState(false);

@@ -2,7 +2,7 @@ import { api } from './src/api';
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { NavigationContainer, useNavigation, DrawerActions } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { createStackNavigator } from '@react-navigation/stack';
 import { createDrawerNavigator } from '@react-navigation/drawer';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -19,6 +19,10 @@ import TaskManagerScreen from './screens/TaskManagerScreen';
 import HealthSummaryScreen from './screens/SummaryScreen';
 import InitialInfoScreen from './screens/InitialInfoScreen';
 import LoginScreen from './screens/LoginScreen';
+import WelcomeScreen from './screens/WelcomeScreen';
+import EntryScreen from './screens/EntryScreen';
+import BabyProfileScreen from './screens/BabyProfileScreen';
+import RecommendedFeaturesScreen from './screens/RecommandFeatureScreen';
 
 type AuthContextType = {
   isAuthenticated: boolean;
@@ -28,18 +32,29 @@ type AuthContextType = {
 
 const AuthContext = createContext<AuthContextType>(null!);
 
+type RootStackParamList = {
+  Main: undefined;
+  Welcome: undefined;
+  Login: undefined;
+  InitialInfo: undefined;
+  RecommendedFeatures: {
+    userId: string;
+    timestamp: number;
+  };
+};
+
 const Tab = createBottomTabNavigator();
-const Stack = createNativeStackNavigator();
-const Drawer = createDrawerNavigator<DrawerParamList>();
+const Drawer = createDrawerNavigator();
+const Stack = createStackNavigator();
 
 // ✅ 原始底部导航
 function TabNavigator() {
   const navigation = useNavigation();
   return (
     <Tab.Navigator
-      screenOptions={({ route }) => ({
-        tabBarIcon: ({ focused, color, size }) => {
-          let iconName;
+      screenOptions={({ route }: { route: any }) => ({
+        tabBarIcon: ({ focused, color, size }: { focused: boolean; color: string; size: number }) => {
+          let iconName: string = 'home';
           switch (route.name) {
             case 'Dashboard':
               iconName = focused ? 'home' : 'home-outline';
@@ -112,7 +127,12 @@ function TabNavigator() {
 
 type DrawerParamList = {
   MainTabs: undefined;
-  Initial: undefined;
+  Welcome: undefined;
+  Login: undefined;
+  Entry: undefined;
+  BabyProfile: undefined;
+  RecommendedFeatures: undefined;
+  Settings: undefined;
 };
 
 type DrawerNavigatorProps = {
@@ -140,17 +160,47 @@ function DrawerNavigator() {
         name="MainTabs" 
         component={TabNavigator} 
         options={{ 
-          title: 'Home',
+          title: '主页',
           drawerIcon: ({ focused, color, size }) => (
             <Ionicons name={focused ? 'home' : 'home-outline'} size={24} color={color} />
           )
         }} 
       />
       <Drawer.Screen 
-        name="Initial" 
+        name="Welcome" 
+        component={WelcomeScreen} 
+        options={{ 
+          title: 'Welcome',
+          drawerIcon: ({ focused, color, size }) => (
+            <Ionicons name={focused ? 'heart' : 'heart-outline'} size={24} color={color} />
+          )
+        }} 
+      />
+      <Drawer.Screen 
+        name="BabyProfile" 
+        component={BabyProfileScreen} 
+        options={{ 
+          title: '宝宝信息',
+          drawerIcon: ({ focused, color, size }) => (
+            <Ionicons name={focused ? 'person' : 'person-outline'} size={24} color={color} />
+          )
+        }} 
+      />
+      <Drawer.Screen 
+        name="RecommendedFeatures" 
+        component={RecommendedFeaturesScreen} 
+        options={{ 
+          title: '推荐功能',
+          drawerIcon: ({ focused, color, size }) => (
+            <Ionicons name={focused ? 'star' : 'star-outline'} size={24} color={color} />
+          )
+        }} 
+      />
+      <Drawer.Screen 
+        name="Settings" 
         component={InitialInfoScreen} 
         options={{ 
-          title: 'Settings',
+          title: '设置',
           drawerIcon: ({ focused, color, size }) => (
             <Ionicons name={focused ? 'settings' : 'settings-outline'} size={24} color={color} />
           )
@@ -179,7 +229,15 @@ export default function App() {
   }, []);
 
   const login = async (email: string) => {
-    setIsAuthenticated(true);
+    try {
+      const success = await api.login({ email, password: 'password' });
+      if (success) {
+        setIsAuthenticated(true);
+        await AsyncStorage.setItem('userId', email);
+      }
+    } catch (error) {
+      console.error('Login error:', error);
+    }
   };
 
   const logout = async () => {
@@ -193,19 +251,16 @@ export default function App() {
     <AuthContext.Provider value={{ isAuthenticated, login, logout }}>
       <GestureHandlerRootView style={{ flex: 1 }}>
         <NavigationContainer>
-          <Stack.Navigator>
-            {isAuthenticated ? (
-              <Stack.Screen
-                name="Main"
-                component={DrawerNavigator}
-                options={{ headerShown: false }}
-              />
+          <Stack.Navigator screenOptions={{ headerShown: false }}>
+            {!isAuthenticated ? (
+              <>
+                <Stack.Screen name="Welcome" component={WelcomeScreen} />
+                <Stack.Screen name="Login" component={LoginScreen} />
+                <Stack.Screen name="InitialInfo" component={InitialInfoScreen} />
+                <Stack.Screen name="RecommendedFeatures" component={RecommendedFeaturesScreen} />
+              </>
             ) : (
-              <Stack.Screen
-                name="Login"
-                component={LoginScreen}
-                options={{ headerShown: false }}
-              />
+              <Stack.Screen name="Main" component={DrawerNavigator} />
             )}
           </Stack.Navigator>
         </NavigationContainer>

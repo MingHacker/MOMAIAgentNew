@@ -101,33 +101,38 @@ const DashboardScreen = () => {
   );
 
   // 提交记录
+  const submitDataRecordCallback = useCallback(async () => {
+    if (!selectedType) throw new Error('记录类型为空');
+    if (!babyInfo) throw new Error('宝宝信息为空');
+
+    let logType: 'feeding' | 'diaper' | 'sleep' | 'cry' | 'bowel';
+    switch (selectedType) {
+      case 'feeding': logType = 'feeding'; break;
+      case 'sleep': logType = 'sleep'; break;
+      case 'diaper': logType = 'diaper'; break;
+      case 'outside': logType = 'cry'; break;
+      default: throw new Error('未知记录类型');
+    }
+
+    const log = {
+      baby_id: babyInfo.id,
+      log_type: logType,
+      log_data: formData,
+    };
+    const response = await api.createBabyLog(log);
+    return { data: response };
+  }, [selectedType, babyInfo, formData]);
+
   const { run: submitDataRecord, loading: submitting } = usePostRequest(
-    async () => {
-      if (!selectedType) throw new Error('记录类型为空');
-
-      let logType: 'feeding' | 'diaper' | 'sleep' | 'cry' | 'bowel';
-      switch (selectedType) {
-        case 'feeding': logType = 'feeding'; break;
-        case 'sleep': logType = 'sleep'; break;
-        case 'diaper': logType = 'diaper'; break;
-        case 'outside': logType = 'cry'; break;
-        default: throw new Error('未知记录类型');
-      }
-
-      const log = {
-        baby_id: babyInfo.id,
-        log_type: logType,
-        log_data: formData,
-      };
-      const response = await api.createBabyLog(log);
-      return { data: response };
-    },
+    submitDataRecordCallback,
     {
       onSuccess: () => {
         Toast.show({ type: 'success', text1: '✅ 记录成功' });
         setModalVisible(false);
         setFormData({});
-        completeRelatedReminder(babyInfo.id, selectedType);
+        if (babyInfo && selectedType) {
+          completeRelatedReminder(babyInfo.id, selectedType);
+        }
       },
       onError: (err) => {
         console.error('提交出错：', err);
@@ -171,7 +176,7 @@ const DashboardScreen = () => {
       <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 100 }}>
         {babyInfo && <BabyInfoCard babyInfo={babyInfo} />}
         {upcomingReminders.length > 0 ? (
-          upcomingReminders.reduce((rows, reminder, index) => {
+          upcomingReminders.reduce((rows: JSX.Element[], reminder, index) => {
             if (index % 2 === 0) {
               rows.push(
                 <View style={styles.cardRow} key={index}>

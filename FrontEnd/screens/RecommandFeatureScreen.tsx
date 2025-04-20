@@ -1,4 +1,3 @@
-// RecommendedFeaturesScreen.tsx
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -10,86 +9,77 @@ import {
   Dimensions,
   Switch,
 } from 'react-native';
-import { useNavigation, useRoute } from '@react-navigation/native';
-import { navigateToTab } from '../utils/navigationHelpers';
-import {
-  getRecommendedFeatures,
-  getUserFeatures,
-  saveUserFeatures,
-} from '../services/feature';
+import { useNavigation } from '@react-navigation/native';
+import type { StackNavigationProp } from '@react-navigation/stack';
+import { getRecommendedFeatures, getUserFeatures, saveUserFeatures } from '../services/feature';
 import { getAgeInMonths } from '../utils/ageUtils';
+
+type RootStackParamList = {
+  Main: undefined;
+  Welcome: undefined;
+  Login: undefined;
+  InitialInfo: undefined;
+  RecommendedFeatures: {
+    userId: string;
+    timestamp: number;
+  };
+  Dashboard: undefined;
+};
+
+type NavigationProp = StackNavigationProp<RootStackParamList>;
 
 const numColumns = 2;
 const screenWidth = Dimensions.get('window').width;
 const cardWidth = screenWidth / numColumns - 30;
 
-const RecommendedFeaturesScreen = () => {
-  const navigation = useNavigation();
-  const route = useRoute<any>();
+interface Feature {
+  id: string;
+  title: string;
+}
 
-  const [userId, setUserId] = useState<string>('123');
-  const [babyInfo, setBabyInfo] = useState<{ birthday: string }>({ birthday: '2023-05-01' }); // 🔁 实际项目中替换为真实数据
-  const [features, setFeatures] = useState<any[]>([]);
+const RecommendedFeaturesScreen = () => {
+  const navigation = useNavigation<NavigationProp>();
+
+  // ✅ 默认的 userId 和 baby 生日
+  const userId = '123';
+  const babyInfo = { birthday: '2023-05-01' };
+
+  const [features, setFeatures] = useState<Feature[]>([]);
   const [selectedFeatures, setSelectedFeatures] = useState<string[]>([]);
 
-  const fetchFeatures = async (uid: string, ageInMonths: number) => {
-    try {
-      const res = await getRecommendedFeatures(uid, ageInMonths);
-      const featureList = res.features || [];
-      setFeatures(featureList);
-
-      const savedRes = await getUserFeatures(uid);
-      const saved = savedRes.selectedFeatureIds || [];
-
-      if (saved.length > 0) {
-        setSelectedFeatures(saved);
-      } else {
-        const defaultSelected = featureList
-          .filter((item) => ['feeding', 'sleep', 'diaper', 'outside'].includes(item.id))
-          .map((item) => item.id);
-        setSelectedFeatures(defaultSelected);
-      }
-    } catch (err: any) {
-      console.error('❌ 推荐功能加载失败:', err.message);
-    }
-  };
-
   useEffect(() => {
-    if (userId && babyInfo?.birthday) {
+    const load = async () => {
       const ageInMonths = getAgeInMonths(babyInfo.birthday);
-      console.log('👶 月龄：', ageInMonths);
-  
-      getRecommendedFeatures(userId, ageInMonths)
-        .then((res) => {
-          console.log('✅ 推荐功能卡:', res.features);
-          setFeatures(res.features || []);
-        })
-        .catch((err) => {
-          console.error('❌ 获取推荐功能失败:', err.message);
-        });
-    }
-  }, [userId, babyInfo]);
-  
+
+      try {
+        const res = await getRecommendedFeatures(userId, ageInMonths);
+        const featureList = res.features || [];
+        setFeatures(featureList);
+
+        // 默认选择喂奶/睡觉/尿布/外出
+        const defaultSelected = featureList
+          .filter((item: Feature) => ['feeding', 'sleep', 'diaper', 'outside'].includes(item.id))
+          .map((item: Feature) => item.id);
+        setSelectedFeatures(defaultSelected);
+      } catch (err: any) {
+        console.error('❌ 推荐功能加载失败:', err.message);
+      }
+    };
+
+    load();
+  }, []);
 
   const toggleFeature = (id: string) => {
     setSelectedFeatures((prev) =>
-      prev.includes(id)
-        ? prev.filter((fid) => fid !== id)
-        : [...prev, id]
+      prev.includes(id) ? prev.filter((fid) => fid !== id) : [...prev, id]
     );
   };
 
   const handleConfirm = async () => {
     try {
       const res = await saveUserFeatures({ userId, featureIds: selectedFeatures });
-      console.log('🧪 后端返回完整 response:', res);
-  
       if (res.data.success) {
-        console.log('✅ 功能保存成功，准备跳转 Dashboard');
-        navigateToTab(navigation, 'Dashboard', {
-          userId,
-          timestamp: Date.now(),
-        });
+        navigation.navigate('Dashboard');
       } else {
         console.warn('❌ 后端返回 success: false');
       }
@@ -97,7 +87,7 @@ const RecommendedFeaturesScreen = () => {
       console.error('❌ 保存失败:', err.message);
     }
   };
-  
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>

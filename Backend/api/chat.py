@@ -1,4 +1,4 @@
-from utils.emotion_utils import is_baby_milestone_tomorrow, count_consecutive_low_sleep, is_mom_birthday_today, days_since_baby_birth, get_baby_months_old, get_baby_birthday, get_mom_birthday, mom_birthday, baby_birthday, weekly_data, generate_celebration_text
+from utils.emotion_utils import is_baby_milestone_tomorrow, count_consecutive_low_sleep, is_mom_birthday_today, days_since_baby_birth, get_baby_months_old, generate_celebration_text
 from datetime import date, timedelta, datetime
 from agents.emotionmanager.schema import EmotionAgentState
 from agents.emotionmanager.graph import build_emotion_graph
@@ -7,19 +7,25 @@ from fastapi import Body, Depends
 from fastapi.responses import JSONResponse
 from fastapi import APIRouter, Depends, Query, HTTPException, status
 from core.supabase import get_supabase
-from agents.emotion_manager import get_mom_health_today, get_baby_health_today
+from agents.mom_manager import get_mom_health_today
+from agents.baby_manager import get_baby_health_today
 from agents.emotionmanager.steps import get_baby_months_old
 from pydantic import BaseModel
-from typing import List, Optional
-from ..main import supabase, get_current_user
+from typing import List, Dict, Optional
 from openai import OpenAI
+from core.auth import get_current_user
 import os
 from dotenv import load_dotenv
-
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+import jwt
+from core.auth import get_current_user
 router = APIRouter()
 
 load_dotenv()
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
+supabase = get_supabase()
+security = HTTPBearer()
 
 class ChatMessage(BaseModel):
     message: str
@@ -31,20 +37,14 @@ class ChatResponse(BaseModel):
     success: bool
     message: str
 
-# 用法举例
-# 🎂 明日提醒
-months = is_baby_milestone_tomorrow(baby_birthday)
-
-# 🧠 连续疲劳识别
-fatigue_days = count_consecutive_low_sleep(weekly_data)
-
-# 🎈 宝宝出生多少天了
-days_alive = days_since_baby_birth(baby_birthday)
-
-# 🎉 妈妈生日提醒
-if is_mom_birthday_today(mom_birthday):
-    message = "Today is your birthday 🎂 I hope someone celebrates YOU today, not just mom-you 💐"
-
+def estimate_score(emotion_label: str, target_emotion: str) -> int:
+    """根据情绪标签估算分数"""
+    if emotion_label == target_emotion:
+        return 100
+    elif emotion_label in ["tired", "stressed"]:
+        return 30 if target_emotion == "happy" else 70
+    else:
+        return 50
 
 @router.post("/api/chat/emotion")
 def emotion_chat_handler(
@@ -99,12 +99,12 @@ def emotion_chat_handler(
     )
 
     celebration_pre_notice = ""
+    baby_birthday = profile["baby_birthday"]
     months = is_baby_milestone_tomorrow(baby_birthday)
     if months:
         celebration_pre_notice = f"🎂 Tomorrow is {baby_name}'s {months}-month milestone! Want a card ready?"
 
     # 5. 连续疲劳识别（睡眠<5.5 或 HRV<40）
-    fatigue_days = 0
     weekly_data = supabase.table("mom_health") \
         .select("sleep_hours, hrv, created_at") \
         .eq("mom_id", user_id).gte("created_at", (today - timedelta(days=7)).isoformat()) \
@@ -113,10 +113,11 @@ def emotion_chat_handler(
     fatigue_days = count_consecutive_low_sleep(weekly_data)
     fatigue_reinforcement = ""
     if fatigue_days >= 2:
-        fatigue_reinforcement = f"You've had {fatigue_days} tough days in a row. I see your effort, and I'm proud of your persistence. ��"
+        fatigue_reinforcement = f"You've had {fatigue_days} tough days in a row. I see your effort, and I'm proud of your persistence."
 
     # 6. 判断今天是否是妈妈生日
     mom_birthday_message = ""
+    mom_birthday = profile.get("mom_birthday")
     if mom_birthday and is_mom_birthday_today(mom_birthday):
         mom_birthday_message = "🎉 Today is your birthday! I hope someone is celebrating YOU today, not just the mom in you. 💐"
 
@@ -192,7 +193,8 @@ async def get_chat_history(
 @router.post("/chat/send", response_model=ChatResponse)
 async def send_chat_message(
     chat_message: ChatMessage,
-    user_id: str = Depends(get_current_user)
+    user_id: str = Depends(get_current_user),
+    supabase: Client = Depends(get_supabase)
 ):
     try:
         # 获取 mom_id

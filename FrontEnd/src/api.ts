@@ -314,17 +314,24 @@ export const api = {
   // Chat History--------------------------------------------
   getChatHistory: async () => {
     try {
-      const response = await axiosInstance.get('/api/chat/history');
+      const token = await AsyncStorage.getItem('access_token');
+      if (!token) {
+        throw new Error('No access token found');
+      }
+      const response = await axiosInstance.get('/chat/history');
+      if (!response.data) {
+        return [];
+      }
       return response.data;
     } catch (error) {
       console.error('Failed to get chat history:', error);
-      throw error;
+      return [];
     }
   },
 
   sendChatMessage: async (message: string) => {
     try {
-      const response = await axiosInstance.post('/api/chat/send', {
+      const response = await axiosInstance.post('/chat/send', {
         message,
         role: 'user',
         source: 'chatbot'
@@ -332,13 +339,13 @@ export const api = {
       return response.data;
     } catch (error) {
       console.error('Failed to send chat message:', error);
-      throw error;
+      return { success: false, message: 'Failed to send message' };
     }
   },
 
   saveChatMessage: async (message: string, isUser: boolean) => {
     try {
-      const response = await axiosInstance.post('/api/chat/save', {
+      const response = await axiosInstance.post('/chat/save', {
         message,
         role: isUser ? 'user' : 'assistant',
         source: 'chatbot'
@@ -346,7 +353,7 @@ export const api = {
       return response.data;
     } catch (error) {
       console.error('Failed to save chat message:', error);
-      throw error;
+      return { success: false };
     }
   },
 };

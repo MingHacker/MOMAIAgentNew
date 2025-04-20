@@ -23,7 +23,7 @@ export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const { login } = useAuth();
-  const navigation = useNavigation<NavigationProp>();
+  //const navigation = useNavigation<NavigationProp>();
 
   const handleSubmit = async () => {
     try {

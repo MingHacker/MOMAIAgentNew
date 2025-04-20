@@ -1,8 +1,10 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { View, Text, ScrollView, StyleSheet, SafeAreaView, ActivityIndicator, TouchableOpacity } from 'react-native';
-import { useFocusEffect, useRoute } from '@react-navigation/native';
+import { useFocusEffect, useRoute, useNavigation } from '@react-navigation/native';
 import Toast from 'react-native-toast-message';
 import dayjs from 'dayjs'; 
+import { DrawerNavigationProp } from '@react-navigation/drawer';
+import Icon from 'react-native-vector-icons/MaterialIcons';
 
 import BabyInfoCard from '../components/BabyInfoCard';
 import FeatureCard from '../components/FeatureCard';
@@ -19,6 +21,11 @@ import { validateFormData } from '../utils/validateForms';
 import { formDataToPayload } from '../utils/formPayload';
 import { BabyInfo, mapBabyProfileToBabyInfo } from '../src/mappers'; // Import mapper and BabyInfo type
 
+type RootParamList = {
+  MainTabs: undefined;
+  Initial: undefined;
+};
+
 const DashboardScreen = () => {
 
   const [babyInfo, setBabyInfo] = useState<BabyInfo | null>(null);
@@ -30,6 +37,8 @@ const DashboardScreen = () => {
   const [selectedType, setSelectedType] = useState<'feeding' | 'sleep' | 'diaper' | 'outside' | null>(null);
   const [formData, setFormData] = useState<any>({});
   const [upcomingReminders, setUpcomingReminders] = useState<Reminder[]>([]);
+
+  const navigation = useNavigation<DrawerNavigationProp<RootParamList>>();
 
   const fetchReminders = useCallback(async (babyId: string | null) => {
     try {
@@ -211,7 +220,11 @@ const DashboardScreen = () => {
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: '#fff' },
-  container: { flex: 1, backgroundColor: '#fff' },
+  container: {
+    flex: 1,
+    backgroundColor: '#FAFAF8',
+    paddingBottom: 90,
+  },
   cardRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -219,7 +232,7 @@ const styles = StyleSheet.create({
   },
   fabCenterButton: {
     position: 'absolute',
-    bottom: 30,
+    bottom: 100,
     alignSelf: 'center',
     backgroundColor: '#bfb2d4',
     borderRadius: 30,
@@ -227,7 +240,34 @@ const styles = StyleSheet.create({
     height: 56,
     justifyContent: 'center',
     alignItems: 'center',
-    elevation: 5
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+  },
+  drawerButton: {
+    position: 'absolute',
+    left: 20,
+    top: 60,
+    zIndex: 999,
+    width: 40,
+    height: 40,
+    backgroundColor: '#F3E8FF',
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
   },
 });
 

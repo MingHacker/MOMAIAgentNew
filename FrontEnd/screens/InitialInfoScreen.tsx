@@ -84,7 +84,12 @@ const InitialInfoScreen = () => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20 },
+  container: {
+    flex: 1,
+    backgroundColor: '#FAFAF8',
+    paddingTop: 40,
+    paddingHorizontal: 20,
+  },
   input: { borderWidth: 1, padding: 10, marginBottom: 10, borderRadius: 8 },
   switchContainer: { flexDirection: 'row', alignItems: 'center', marginVertical: 10 },
 });

@@ -306,11 +306,14 @@ async def complete_reminder_by_log(reminderbylog:CompleteReminderByLog, user_id:
 
         if not reminder_data.data:
             return {"message": "No matching uncompleted reminder found."}
-
+        
         reminder_id = reminder_data.data[0]["id"]
 
         # Mark the reminder as completed
         result = supabase.table("reminders").update({"is_completed": True}).eq("id", reminder_id).execute()
+
+        # generate reminders for the baby
+        generate_reminders_for_baby(reminderbylog.baby_id)
 
         if result.data:
             return {"message": f"Reminder with id {reminder_id} completed successfully."}
@@ -332,6 +335,21 @@ async def health_check():
     }
 
 # --- Background Task Function ---
+async def generate_reminders_for_baby(baby_id: str):
+    """
+    Generate reminders for a specific baby based on their logs.
+    
+    Args:
+        baby_id: ID of the baby to generate reminders for
+    """
+    try:
+        print(f"Processing reminders for baby: {baby_id}")
+        agent.generate_reminders_from_baby_logs(baby_id, datetime.now(timezone.utc))
+        return True
+    except Exception as e:
+        print(f"Error processing reminders for baby {baby_id}: {e}")
+        return False
+
 async def run_reminder_generation_for_all_babies():
     """
     Scheduled task to run reminder generation for all active baby profiles.
@@ -350,15 +368,11 @@ async def run_reminder_generation_for_all_babies():
         processed_count = 0
         error_count = 0
         for baby_id in all_baby_ids:
-            try:
-                print(f"Processing reminders for baby: {baby_id}")
-                # Use the globally initialized agent
-                agent.generate_reminders_from_baby_logs(baby_id, datetime.now(timezone.utc))
+            success = await generate_reminders_for_baby(baby_id)
+            if success:
                 processed_count += 1
-            except Exception as e:
+            else:
                 error_count += 1
-                print(f"Error processing reminders for baby {baby_id}: {e}")
-                # Decide whether to continue or stop on error
 
         print(f"--- Scheduled reminder generation complete. Processed: {processed_count}, Errors: {error_count} ---")
 
@@ -378,5 +392,3 @@ app.include_router(chat_router)
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
-
-

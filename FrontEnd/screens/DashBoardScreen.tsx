@@ -9,7 +9,6 @@ import Icon from 'react-native-vector-icons/MaterialIcons';
 import BabyInfoCard from '../components/BabyInfoCard';
 import FeatureCard from '../components/FeatureCard';
 import RecordModal from '../components/RecordModal';
-import FeatureCardList from '../components/FeatureCardList';
 
 
 import { getUserFeatures } from '../services/feature';
@@ -63,15 +62,20 @@ const DashboardScreen = () => {
           const mappedInfo = mapBabyProfileToBabyInfo(babies[0]);
           setBabyInfo(mappedInfo);
           fetchReminders(mappedInfo.id);
+          
+          // Set up periodic fetching
+          const intervalId = setInterval(() => {
+            fetchReminders(mappedInfo.id);
+          }, 10 * 60 * 1000); // 10 minutes
+          
+          return () => clearInterval(intervalId);
         } else {
-          // Handle case with no babies - maybe set a default state or show a message
-          setBabyInfo(mapBabyProfileToBabyInfo(null)); // Use mapper's null handling
+          setBabyInfo(mapBabyProfileToBabyInfo(null));
           console.log('No baby profiles found for this user.');
         }
       } catch (error) {
         console.error('Failed to fetch baby data:', error);
-        // Optionally set an error state to display to the user
-        setBabyInfo(mapBabyProfileToBabyInfo(null)); // Show default on error
+        setBabyInfo(mapBabyProfileToBabyInfo(null));
       } finally {
         setIsLoading(false);
       }
@@ -80,24 +84,12 @@ const DashboardScreen = () => {
     fetchBabyData();
   }, [fetchReminders]);
 
-  console.log('🔥 Dashboard 接收到功能卡片:', userFeatureIds);
-  // 加载功能卡片
-  const { run: loadFeatures, loading: loadingFeatures } = useApiRequest(
-    () => getUserFeatures("123"),
-    {
-      onSuccess: (res: any) => {
-        console.log('🔥 Dashboard 接收到功能卡片:', res?.selectedFeatureIds);
-        setUserFeatureIds(res?.selectedFeatureIds || []);
-      },
-      onError: () => {
-        Toast.show({ type: 'error', text1: '❌ 加载功能卡片失败' });
-      }
-    }
-  );
+  // console.log('🔥 Dashboard 接收到功能卡片:', userFeatureIds);
+  // Feature loading temporarily disabled
   useFocusEffect(
     useCallback(() => {
-      loadFeatures();
-    }, ["123", loadFeatures])
+      // Placeholder for future feature loading
+    }, [])
   );
 
   // 提交记录
@@ -161,15 +153,6 @@ const DashboardScreen = () => {
     }
     submitDataRecord(formData);
   };
-
-  if (loadingFeatures) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <ActivityIndicator size="large" />
-        <Text>加载中...</Text>
-      </SafeAreaView>
-    );
-  }
 
   return (
     <SafeAreaView style={styles.safeArea}>

@@ -15,14 +15,16 @@ import {
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import axios from 'axios';
-import { OPENAI_API_KEY } from '@env';
+import { OPENAI_API_KEY } from '../env';
+
+
 
 export default function QAScreen() {
   const [question, setQuestion] = useState('');
   const [answer, setAnswer] = useState('');
   const [loading, setLoading] = useState(false);
-  const [imageBase64, setImageBase64] = useState(null);
-  const [imageUri, setImageUri] = useState(null);
+  const [imageBase64, setImageBase64] = useState<string | null>(null);
+  const [imageUri, setImageUri] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
 
   const pickImage = async () => {

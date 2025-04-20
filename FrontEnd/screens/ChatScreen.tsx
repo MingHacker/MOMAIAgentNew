@@ -15,7 +15,7 @@ import {
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import axios from 'axios';
-import { OPENAI_API_KEY } from '../env';
+import { OPENAI_API_KEY } from '@env';
 
 
 

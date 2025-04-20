@@ -33,16 +33,7 @@ type AuthContextType = {
 
 const AuthContext = createContext<AuthContextType>(null!);
 
-type RootStackParamList = {
-  Main: undefined;
-  Welcome: undefined;
-  Login: undefined;
-  InitialInfo: undefined;
-  RecommendedFeatures: {
-    userId: string;
-    timestamp: number;
-  };
-};
+
 
 const Tab = createBottomTabNavigator();
 const Drawer = createDrawerNavigator();
@@ -231,7 +222,7 @@ export default function App() {
 
   const login = async (email: string) => {
     try {
-      const success = await api.login({ email, password: 'password' });
+      const success = await api.loginWithToken();
       if (success) {
         setIsAuthenticated(true);
         await AsyncStorage.setItem('userId', email);

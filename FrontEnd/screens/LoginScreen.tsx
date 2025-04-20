@@ -9,15 +9,7 @@ import {
 } from 'react-native';
 import { api } from '../src/api';
 import { useAuth } from '../App';
-import { useNavigation } from '@react-navigation/native';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
-type RootStackParamList = {
-  Main: undefined;
-  Login: undefined;
-};
-
-type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');

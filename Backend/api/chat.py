@@ -130,33 +130,6 @@ async def emotion_chat_handler(baby_id: str, user_id: str = Depends(get_current_
         "mom_birthday_message": mom_birthday_message
     }
 
-@router.post("/chat/save", response_model=ChatResponse)
-async def save_chat_message(
-    chat_message: ChatMessage,
-    supabase: SupabaseService = Depends(get_supabase),
-    user_id: str = Depends(get_current_user)
-):
-    try:
-        # 直接使用 user_id 作为 mom_id（你数据库就是用这个字段）
-        result = supabase.insert("chat_logs", {
-            "mom_id": user_id,
-            "role": chat_message.role,
-            "message": chat_message.message,
-            "emotion_label": chat_message.emotion_label,
-            "source": chat_message.source,
-            "timestamp": datetime.now().isoformat()
-        })
-
-        if not result:
-            raise HTTPException(status_code=500, detail="Failed to save chat message")
-
-        return ChatResponse(success=True, message="Chat message saved successfully")
-
-    except Exception as e:
-        print(f"❌ /chat/save 错误: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
-    
-
 
 @router.get("/chat/history", response_model=List[ChatMessage])
 async def get_chat_history(
@@ -174,14 +147,14 @@ async def get_chat_history(
             .limit(limit)
             .execute()
         )
-
+        print(result.data)
         return result.data or []
 
     except Exception as e:
         print(f"❌ /chat/history 错误: {e}")
         raise HTTPException(status_code=500, detail=str(e))
     
-    
+
 
 @router.post("/chat/send", response_model=ChatResponse)
 async def send_chat_message(

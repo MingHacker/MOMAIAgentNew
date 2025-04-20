@@ -103,12 +103,19 @@ const ChatBot = () => {
       }
       const history = await api.getChatHistory();
       if (history && Array.isArray(history)) {
-        const formattedMessages = history.map((msg: ChatMessage) => ({
-          id: msg.id,
-          text: msg.message,
-          isUser: msg.role === 'user',
-          timestamp: new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-        }));
+        const formattedMessages = history.map((msg: ChatMessage) => {
+          const timestamp = msg.timestamp && !isNaN(Date.parse(msg.timestamp))
+            ? new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+            : '🕒';
+  
+          return {
+            id: msg.id,
+            text: msg.message,
+            isUser: msg.role === 'user',
+            timestamp,
+          };
+        }); // ✅ 只保留一个括号
+  
         setMessages(formattedMessages);
       }
     } catch (error) {
@@ -118,7 +125,6 @@ const ChatBot = () => {
       setIsLoading(false);
     }
   };
-
   const saveMessage = async (text: string, isUser: boolean) => {
     try {
       await api.saveChatMessage(text, isUser);

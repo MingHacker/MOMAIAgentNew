@@ -292,7 +292,63 @@ export const api = {
     } catch (error) {
       handleApiError(error);
     }
-  }
+  },
+
+  getEmotion: async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/emotion/today`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${await AsyncStorage.getItem('access_token')}`,
+        },
+      });
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error('Error fetching emotion:', error);
+      throw error;
+    }
+  },
+
+  // Chat History--------------------------------------------
+  getChatHistory: async () => {
+    try {
+      const response = await axiosInstance.get('/api/chat/history');
+      return response.data;
+    } catch (error) {
+      console.error('Failed to get chat history:', error);
+      throw error;
+    }
+  },
+
+  sendChatMessage: async (message: string) => {
+    try {
+      const response = await axiosInstance.post('/api/chat/send', {
+        message,
+        role: 'user',
+        source: 'chatbot'
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Failed to send chat message:', error);
+      throw error;
+    }
+  },
+
+  saveChatMessage: async (message: string, isUser: boolean) => {
+    try {
+      const response = await axiosInstance.post('/api/chat/save', {
+        message,
+        role: isUser ? 'user' : 'assistant',
+        source: 'chatbot'
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Failed to save chat message:', error);
+      throw error;
+    }
+  },
 };
 
 // Error handling utility

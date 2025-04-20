@@ -11,6 +11,7 @@ import { TouchableOpacity } from 'react-native';
 import { navigationStyles } from './styles/navigation';
 import 'react-native-gesture-handler';
 import 'react-native-reanimated';
+import ChatBot from './components/ChatBot';
 
 // Screens
 import DashboardScreen from './screens/DashBoardScreen';
@@ -263,6 +264,7 @@ export default function App() {
               <Stack.Screen name="Main" component={DrawerNavigator} />
             )}
           </Stack.Navigator>
+          <ChatBot />
         </NavigationContainer>
       </GestureHandlerRootView>
     </AuthContext.Provider>

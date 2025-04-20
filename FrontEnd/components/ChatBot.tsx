@@ -95,8 +95,14 @@ const ChatBot = () => {
 
   const loadChatHistory = async () => {
     try {
+      setIsLoading(true);
+      const token = await AsyncStorage.getItem('access_token');
+      if (!token) {
+        console.error('No access token found');
+        return;
+      }
       const history = await api.getChatHistory();
-      if (history) {
+      if (history && Array.isArray(history)) {
         const formattedMessages = history.map((msg: ChatMessage) => ({
           id: msg.id,
           text: msg.message,
@@ -107,6 +113,9 @@ const ChatBot = () => {
       }
     } catch (error) {
       console.error('Failed to load chat history:', error);
+      addMessage('Failed to load chat history. Please try again later.', false);
+    } finally {
+      setIsLoading(false);
     }
   };
 

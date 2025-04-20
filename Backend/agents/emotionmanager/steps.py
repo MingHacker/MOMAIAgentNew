@@ -6,7 +6,7 @@ from .schema import EmotionAgentState
 from .prompts import emotion_prompt_narrative as emotion_prompt, gentle_message_prompt_cn as gentle_message_prompt, celebration_prompt, task_detect_prompt_template
 from datetime import date, datetime
 from core.supabase import get_supabase
-from agents.llm import call_gpt_json_async
+from agents.llm import call_gpt_json
 
 
 supabase = get_supabase()
@@ -98,7 +98,7 @@ async def detect_task_from_chat_step(state: EmotionAgentState) -> EmotionAgentSt
     user_input = state.user_text
     prompt = task_detect_prompt_template.render(text=user_input)
 
-    response = await call_gpt_json_async(prompt)
+    response = await call_gpt_json(prompt)
     state.extracted_tasks = response.get("tasks", [])
     return state
 

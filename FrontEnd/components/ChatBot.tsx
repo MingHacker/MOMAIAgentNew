@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -19,7 +19,6 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import { momApi } from '../src/api';
 import { babyApi } from '../src/api';
-import { useRoute, useNavigation } from '@react-navigation/native';
 
 
 const { height } = Dimensions.get('window');
@@ -60,32 +59,11 @@ const axiosInstance = axios.create({
 });
 
 const ChatBot = () => {
-  const route = useRoute();
-  const hiddenScreens = ['Welcome', 'Login', 'Register'];
-  
-  // 如果当前页面在隐藏列表中，不显示 ChatBot
-  if (hiddenScreens.includes(route.name)) {
-    return null;
-  }
-
   const [visible, setVisible] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [hasUnreadMessage, setHasUnreadMessage] = useState(false);
-  const flatListRef = useRef<FlatList>(null);
-
-  const scrollToBottom = () => {
-    if (flatListRef.current && messages.length > 0) {
-      flatListRef.current.scrollToEnd({ animated: true });
-    }
-  };
-
-  useEffect(() => {
-    if (visible) {
-      setTimeout(scrollToBottom, 100);
-    }
-  }, [messages, visible]);
 
   useEffect(() => {
     loadChatHistory();
@@ -305,7 +283,6 @@ const ChatBot = () => {
 
             <View style={styles.messagesContainer}>
                 <FlatList
-                ref={flatListRef}
                 data={messages}
                 keyExtractor={(item) => item.id}
                 renderItem={({ item }) => (
@@ -320,8 +297,6 @@ const ChatBot = () => {
                     </View>
                 )}
                 contentContainerStyle={styles.messagesList}
-                onContentSizeChange={scrollToBottom}
-                onLayout={scrollToBottom}
                 />
             </View>
 

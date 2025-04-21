@@ -82,7 +82,7 @@ export default function BabyStatusCard() {
   return (
     <View style={styles.card}>
       <View style={styles.header}>
-        <Text style={styles.title}>👼 Baby's Daily Stats</Text>
+        <Text style={styles.title}>👶 Baby's Daily Stats</Text>
         <View style={styles.headerRight}>
           <Text style={styles.time}>Updated: {dayjs().format('HH:mm')}</Text>
           <TouchableOpacity style={styles.refreshButton} onPress={fetchBabyData}>
@@ -94,22 +94,22 @@ export default function BabyStatusCard() {
       <View style={styles.dataContainer}>
         <View style={styles.dataRow}>
           <View style={styles.dataItem}>
-            <Text style={styles.dataLabel}>🍶 Feeding</Text>
+            <Text style={styles.dataLabel}>🍼 Feeding</Text>
             <Text style={styles.dataValue}>{todayData.feeding}ml</Text>
           </View>
           <View style={styles.dataItem}>
-            <Text style={styles.dataLabel}>💫 Sleep</Text>
+            <Text style={styles.dataLabel}>💤 Sleep</Text>
             <Text style={styles.dataValue}>{todayData.sleep.toFixed(1)}hr</Text>
           </View>
         </View>
         
         <View style={styles.dataRow}>
           <View style={styles.dataItem}>
-            <Text style={styles.dataLabel}>🧸 Diaper</Text>
+            <Text style={styles.dataLabel}>💩 Diaper</Text>
             <Text style={styles.dataValue}>{todayData.diaper} times</Text>
           </View>
           <View style={styles.dataItem}>
-            <Text style={styles.dataLabel}>🌞 Outside</Text>
+            <Text style={styles.dataLabel}>😢 Crying</Text>
             <Text style={styles.dataValue}>{todayData.cry}min</Text>
           </View>
         </View>
@@ -120,16 +120,16 @@ export default function BabyStatusCard() {
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: '#fff',
-    borderRadius: 16,
+    backgroundColor: '#f9f9f9',
+    borderRadius: 12,
     padding: 16,
     marginHorizontal: 16,
     marginTop: 16,
     shadowColor: '#ccc',
     shadowOpacity: 0.2,
-    shadowOffset: { width: 0, height: 2 },
-    shadowRadius: 8,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 1 },
+    shadowRadius: 4,
+    elevation: 2,
     minHeight: 120,
   },
   header: {
@@ -145,9 +145,9 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   title: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '600',
-    color: '#8B5CF6',
+    color: '#4C3575',
   },
   time: {
     fontSize: 12,
@@ -163,13 +163,11 @@ const styles = StyleSheet.create({
   },
   dataItem: {
     flex: 1,
-    padding: 12,
+    padding: 8,
     backgroundColor: '#F3E8FF',
-    borderRadius: 12,
+    borderRadius: 8,
     marginHorizontal: 4,
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#EDE9FE',
   },
   dataLabel: {
     fontSize: 14,
@@ -197,8 +195,6 @@ const styles = StyleSheet.create({
     padding: 4,
     backgroundColor: '#F3E8FF',
     borderRadius: 4,
-    borderWidth: 1,
-    borderColor: '#EDE9FE',
   },
   refreshText: {
     color: '#8B5CF6',

@@ -93,7 +93,8 @@ def get_today_mom_summary(user_id: str = Depends(get_current_user)):
             "sleep": health_data.get("sleep_hours"),
             "steps": health_data.get("steps"),
             "resting_heart_rate": health_data.get("resting_heart_rate"),
-            "breathing_rate": health_data.get("breathing_rate")
+            "breathing_rate": health_data.get("breathing_rate"),
+            "mood": health_data.get("mood"),
         }
         print(f"发送给 GPT 的数据：{prompt_input}")
         
@@ -123,7 +124,7 @@ def get_mom_weekly_health(user_id: str = Depends(get_current_user)):
         health_result = (
             supabase
             .table("mom_health")
-            .select("hrv, sleep_hours, resting_heart_rate, steps, breathing_rate, record_date")
+            .select("hrv, sleep_hours, resting_heart_rate, steps, breathing_rate, record_date, mood, calories_burned, mood, stress_level")
             .eq("mom_id", user_id)
             .gte("record_date", start_date.isoformat())
             .execute()
@@ -138,7 +139,10 @@ def get_mom_weekly_health(user_id: str = Depends(get_current_user)):
                 "sleep_hours": row.get("sleep_hours", 0),
                 "resting_heart_rate": row.get("resting_heart_rate", 0),
                 "steps": row.get("steps", 0),
-                "breathing_rate": row.get("breathing_rate", 0)
+                "breathing_rate": row.get("breathing_rate", 0),
+                "mood": row.get("mood", "low"),
+                "calories_burned": row.get("calories_burned", 0),
+                "stress_level": row.get("stress_level", "low")
             }
 
         # 补全空白日期
@@ -151,7 +155,10 @@ def get_mom_weekly_health(user_id: str = Depends(get_current_user)):
                 "sleep_hours": 0,
                 "resting_heart_rate": 0,
                 "steps": 0,
-                "breathing_rate": 0
+                "breathing_rate": 0,
+                "mood": 0,
+                "calories_burned": 0,
+                "stress_level": 0
             }))
 
         return {"success": True, "data": output}

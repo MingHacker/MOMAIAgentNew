@@ -392,6 +392,9 @@ export type MomHealthData = {
   resting_heart_rate: number;
   steps: number;
   breathing_rate: number;
+  mood: string;
+  calories_burned: number;
+  stress_level: string;
 };
 
 export type MomHealthResponse = {
@@ -446,6 +449,7 @@ export type BabyWeeklyItem = {
   diaper_count: number;
   bowel_count: number;
   outside_total_minutes: number;
+  cry_total_minutes: number;
 };
 
 export type BabyWeeklySummaryResponse = {

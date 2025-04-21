@@ -52,13 +52,15 @@ def get_weekly_baby_summary(baby_id: str, user_id: str = Depends(get_current_use
         today = datetime.utcnow().date()
         start_date = today - timedelta(days=6)  # 包含今天，共7天
 
+        # Ensure logs_result is directly used as it returns a list of results
         logs_result = supabase.query(
             "baby_logs",
             {"baby_id": baby_id}
         )
 
+        # If the query is successful, logs_result will be a list of entries
         daily_summary = {}
-        for row in logs_result.data:
+        for row in logs_result:  # Directly iterate over the list
             dt = datetime.fromisoformat(row["logged_at"])
             day = dt.date().isoformat()
             daily = daily_summary.setdefault(day, {
@@ -67,14 +69,15 @@ def get_weekly_baby_summary(baby_id: str, user_id: str = Depends(get_current_use
                 "sleep_total_hours": 0,
                 "diaper_count": 0,
                 "bowel_count": 0,
-                "outside_total_minutes": 0
+                "outside_total_minutes": 0,
+                "cry_total_minutes": 0
             })
 
             log_type = row["log_type"]
             data = row["log_data"]
 
             if log_type == "feeding":
-                amount = data.get("amount", 0)
+                amount = data.get("feedAmount", 0)
                 try:
                     daily["feed_total_ml"] += int(amount)
                 except:
@@ -82,16 +85,26 @@ def get_weekly_baby_summary(baby_id: str, user_id: str = Depends(get_current_use
 
             elif log_type == "sleep":
                 duration = data.get("duration", 0) / 3600  # 秒转小时
-                daily["sleep_total_hours"] += round(duration, 2)
+                start = datetime.strptime(data.get('sleepStart'), "%H:%M")
+                end = datetime.strptime(data.get('sleepEnd'), "%H:%M")
+                daily["sleep_total_hours"] += (end - start).total_seconds() / 3600
+        
 
             elif log_type == "diaper":
                 daily["diaper_count"] += 1
-                if data.get("type") == "dirty":
+                if data.get("diaperSolid") == True:
                     daily["bowel_count"] += 1
 
             elif log_type == "outside":
                 duration = data.get("duration", 0)
                 daily["outside_total_minutes"] += int(duration)
+
+            elif log_type == "cry":
+                duration = data.get("duration", 0)
+                daily["cry_total_minutes"] += int(duration)
+
+        # Print statement for debugging
+        print("************************Weekly baby output", daily_summary)
 
         # 补全空天数
         output = []
@@ -103,9 +116,10 @@ def get_weekly_baby_summary(baby_id: str, user_id: str = Depends(get_current_use
                 "sleep_total_hours": 0,
                 "diaper_count": 0,
                 "bowel_count": 0,
-                "outside_total_minutes": 0
+                "outside_total_minutes": 0,
+                "cry_total_minutes": 0
             }))
-
+        print("************************Weekly baby output", output)
         return {"success": True, "data": output}
 
     except Exception as e:

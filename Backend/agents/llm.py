@@ -1,6 +1,8 @@
 import json
-from typing import Dict
+from typing import Dict, Optional
 from openai import OpenAI
+
+CATEGORIES = ["baby_care", "shopping", "housework", "healthcare", "self_care", "work", "other"]
 
 client = OpenAI()
 
@@ -88,6 +90,51 @@ def call_gpt_json(prompt: str) -> dict:
         print("❌ GPT 调用失败:", str(e))
         return {"tasks": []}
 
+
+
+
+client = OpenAI(
+    api_key = "",  # or use os.getenv("...")
+    base_url="https://api.deepseek.com/v1"  # Replace with your provider
+)
+
+def detect_task_category(task_title: str) -> Optional[str]:
+    """
+    Uses LLM to detect the category of a task based on its title/description.
+
+    Args:
+        task_title: A short task description (e.g., "Buy formula", "Book vaccine appointment")
+
+    Returns:
+        Predicted category as a string or None if detection fails.
+    """
+    prompt = f"""
+You are an AI assistant helping a mom categorize her tasks.
+
+Here are the possible categories:
+- baby_care: feeding, sleep, diaper, bath, play
+- shopping: buying items (diapers, groceries, etc.)
+- housework: cleaning, laundry, dishes
+- healthcare: appointments, checkups, medicine
+- self_care: exercise, meditation, journaling
+- work: job-related tasks
+- other: if none of the above fits
+
+Task: "{task_title}"
+Which category does this task belong to? Only reply with the category name.
+"""
+
+    try:
+        response = client.chat.completions.create(
+            model="deepseek-chat",
+            messages=[{"role": "user", "content": prompt}],
+        )
+        category = response.choices[0].message.content.strip().lower()
+        return category if category in CATEGORIES else "other"
+
+    except Exception as e:
+        print(f"Error detecting task category: {e}")
+        return None
 
 #def call_gpt_json(prompt: str) -> Dict:
 #    print("🧠 模拟调用 GPT Prompt:\n", prompt)

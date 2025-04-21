@@ -8,9 +8,11 @@ dayjs.extend(relativeTime);
 type FeatureCardProps = {
   featureId: string | { id: string; title?: string };
   reminderTime?: string;
+  reminderType?: 'feeding' | 'diaper' | 'sleep';
+  dailySummary?: string;
 };
 
-const FeatureCard = ({ featureId, reminderTime }: FeatureCardProps) => {
+const FeatureCard = ({ featureId, reminderTime, reminderType, dailySummary }: FeatureCardProps) => {
   let displayText = '';
   let timeDiffText = '';
 
@@ -29,6 +31,30 @@ const FeatureCard = ({ featureId, reminderTime }: FeatureCardProps) => {
     <View style={styles.card}>
       <Text style={styles.text}>{displayText}</Text>
       {timeDiffText ? <Text style={styles.time}>{timeDiffText}</Text> : null}
+      {dailySummary && reminderType && (
+        <View style={styles.summaryContainer}>
+          {reminderType === 'sleep' && (
+            <Text style={styles.summaryText}>
+              Slept: {JSON.parse(dailySummary).totalmins} mins
+            </Text>
+          )}
+          {reminderType === 'diaper' && (
+            <>
+              <Text style={styles.summaryText}>
+                Solid: {JSON.parse(dailySummary).solid}
+              </Text>
+              <Text style={styles.summaryText}>
+                Wet: {JSON.parse(dailySummary).wet}
+              </Text>
+            </>
+          )}
+          {reminderType === 'feeding' && (
+            <Text style={styles.summaryText}>
+              Fed: {JSON.parse(dailySummary).totalamountInML}ml
+            </Text>
+          )}
+        </View>
+      )}
     </View>
   );
 };
@@ -55,6 +81,15 @@ const styles = StyleSheet.create({
   time: {
     fontSize: 12,
     color: '#717171',
+    marginTop: 4,
+  },
+  summaryContainer: {
+    marginTop: 8,
+    width: '100%',
+  },
+  summaryText: {
+    fontSize: 14,
+    color: '#4B5563',
     marginTop: 4,
   },
 });

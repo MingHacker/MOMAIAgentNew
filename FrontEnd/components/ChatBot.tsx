@@ -17,6 +17,9 @@ import { api } from '../src/api';
 import dayjs from 'dayjs';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
+import { momApi } from '../src/api';
+import { babyApi } from '../src/api';
+
 
 const { height } = Dimensions.get('window');
 
@@ -26,6 +29,13 @@ interface ChatMessage {
   role: 'user' | 'assistant';
   timestamp: string;
 }
+
+interface ChatMessageCreate {
+    message: string;
+    role: 'user' | 'assistant';
+    emotion_label?: string;
+    source?: string; // 默认为 "chatbot"
+  }
 
 interface Message {
   id: string;
@@ -101,11 +111,17 @@ const ChatBot = () => {
         console.error('No access token found');
         return;
       }
+  
       const history = await api.getChatHistory();
       if (history && Array.isArray(history)) {
         const formattedMessages = history.map((msg: ChatMessage) => {
-          const timestamp = msg.timestamp && !isNaN(Date.parse(msg.timestamp))
-            ? new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+          const raw = msg.timestamp;
+          const isValid = raw && dayjs(raw).isValid();
+  
+          console.log('🕒 Incoming timestamp:', raw, '| Valid:', isValid);
+  
+          const timestamp = isValid
+            ? dayjs(raw).format('HH:mm')
             : '🕒';
   
           return {
@@ -114,9 +130,9 @@ const ChatBot = () => {
             isUser: msg.role === 'user',
             timestamp,
           };
-        }); // ✅ 只保留一个括号
-  
-        setMessages(formattedMessages);
+        });
+        console.log('🐣 Chat history raw response:', history);
+        setMessages(formattedMessages.reverse());
       }
     } catch (error) {
       console.error('Failed to load chat history:', error);
@@ -125,6 +141,7 @@ const ChatBot = () => {
       setIsLoading(false);
     }
   };
+
   const saveMessage = async (text: string, isUser: boolean) => {
     try {
       await api.saveChatMessage(text, isUser);
@@ -146,32 +163,39 @@ const ChatBot = () => {
 
   const handleQuickBubble = async (action: string) => {
     switch (action) {
-      case 'mom_today':
-        try {
-          const response = await axiosInstance.get('/api/mom/summary');
-          if (response.data.success) {
-            addMessage(response.data.summary, false);
-          } else {
-            addMessage('Sorry, I couldn\'t fetch mom\'s summary right now.', false);
-          }
-        } catch (error) {
-          console.error('Failed to fetch mom summary:', error);
-          addMessage('Sorry, I couldn\'t fetch mom\'s summary right now.', false);
-        }
-        break;
-      case 'baby_today':
-        try {
-          const response = await axiosInstance.get('/api/baby/health/daily/default_baby_id');
-          if (response.data.success) {
-            addMessage(response.data.summary, false);
-          } else {
-            addMessage('Sorry, I couldn\'t fetch baby\'s summary right now.', false);
-          }
-        } catch (error) {
-          console.error('Failed to fetch baby summary:', error);
-          addMessage('Sorry, I couldn\'t fetch baby\'s summary right now.', false);
-        }
-        break;
+        case 'mom_today':
+            try {
+              const response = await momApi.getTodaySummary();
+              console.log('📦 mom summary response:', response);
+          
+              if (response.success && response.summary) {
+                addMessage(response.summary, false);
+              } else {
+                addMessage('Sorry, I couldn’t fetch mom’s summary right now.', false);
+              }
+            } catch (error) {
+              console.error('Failed to fetch mom summary:', error);
+              addMessage('Sorry, I couldn’t fetch mom’s summary right now.', false);
+            }
+            break;
+        case 'baby_today':
+            try {
+                const babyId = await AsyncStorage.getItem('baby_id') || '';
+                const response = await babyApi.getTodaySummary(babyId);
+                console.log('📦 baby summary response:', response);
+            
+                if (response.success && response.summary) {
+                addMessage(response.summary, false);
+                } else {
+                // 👶 Friendly fallback if no summary available
+                addMessage("Looks like there's no baby record for today yet. Maybe you can start by logging a feed or a nap 🐣", false);
+                }
+            } catch (error) {
+                console.error('Failed to fetch baby summary:', error);
+                addMessage("Hmm… I couldn’t reach baby’s data right now. Want to try again later? ☁️", false);
+            }
+            break;
+        
       case 'greeting':
         addMessage('Hello! How can I help you today?', false);
         break;
@@ -185,14 +209,11 @@ const ChatBot = () => {
     if (inputText.trim()) {
       const message = inputText.trim();
       try {
-        // 保存用户消息
-        await api.saveChatMessage(message, true);
-        addMessage(message, true);
-        
-        // 发送消息并获取 AI 回复
+        addMessage(message, true); // ✅ 会自动保存到 chat_logs 表
+  
         const response = await api.sendChatMessage(message);
         if (response.success) {
-          addMessage(response.message, false);
+          addMessage(response.message, false); // 同样保存 AI 回复
         }
       } catch (error) {
         console.error('Failed to send message:', error);
@@ -201,7 +222,7 @@ const ChatBot = () => {
       setInputText('');
     }
   };
-
+  
   const handleModalOpen = () => {
     setVisible(true);
     setHasUnreadMessage(false);
@@ -232,58 +253,57 @@ const ChatBot = () => {
         onRequestClose={handleModalClose}
         >
         <View style={styles.modalContainer}>
-            <KeyboardAvoidingView
-            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-            keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
-            style={{ flex: 1 }}
-            >
             <View style={styles.chatContainer}>
-                <View style={styles.header}>
+            <View style={styles.header}>
                 <View style={styles.headerContent}>
-                    <Icon name="robot-happy" size={24} color="#8B5CF6" />
-                    <Text style={styles.headerText}>MOM AI Assistant</Text>
+                <Icon name="robot-happy" size={24} color="#8B5CF6" />
+                <Text style={styles.headerText}>MOM AI Assistant</Text>
                 </View>
                 <TouchableOpacity onPress={handleModalClose}>
-                    <Icon name="close" size={24} color="#8B5CF6" />
+                <Icon name="close" size={24} color="#8B5CF6" />
                 </TouchableOpacity>
-                </View>
+            </View>
 
-                <View style={styles.quickBubblesContainer}>
+            <View style={styles.quickBubblesContainer}>
                 <FlatList
-                    data={QUICK_BUBBLES}
-                    numColumns={2}
-                    keyExtractor={(item) => item.action}
-                    renderItem={({ item }) => (
+                data={QUICK_BUBBLES}
+                numColumns={2}
+                keyExtractor={(item) => item.action}
+                renderItem={({ item }) => (
                     <TouchableOpacity
-                        style={styles.quickBubble}
-                        onPress={() => handleQuickBubble(item.action)}
+                    style={styles.quickBubble}
+                    onPress={() => handleQuickBubble(item.action)}
                     >
-                        <Icon name={item.icon} size={24} color="#8B5CF6" style={styles.bubbleIcon} />
-                        <Text style={styles.quickBubbleText}>{item.text}</Text>
+                    <Icon name={item.icon} size={24} color="#8B5CF6" style={styles.bubbleIcon} />
+                    <Text style={styles.quickBubbleText}>{item.text}</Text>
                     </TouchableOpacity>
-                    )}
+                )}
                 />
-                </View>
+            </View>
 
-                <View style={styles.messagesContainer}>
+            <View style={styles.messagesContainer}>
                 <FlatList
-                    data={messages}
-                    keyExtractor={(item) => item.id}
-                    renderItem={({ item }) => (
+                data={messages}
+                keyExtractor={(item) => item.id}
+                renderItem={({ item }) => (
                     <View
-                        style={[
+                    style={[
                         styles.messageBubble,
                         item.isUser ? styles.userBubble : styles.botBubble,
-                        ]}
+                    ]}
                     >
-                        <Text style={styles.messageText}>{item.text}</Text>
-                        <Text style={styles.timestamp}>{item.timestamp}</Text>
+                    <Text style={styles.messageText}>{item.text}</Text>
+                    <Text style={styles.timestamp}>{item.timestamp}</Text>
                     </View>
-                    )}
-                    contentContainerStyle={styles.messagesList}
+                )}
+                contentContainerStyle={styles.messagesList}
                 />
-                </View>
+            </View>
 
+            <KeyboardAvoidingView
+                behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+                keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}
+            >
                 <View style={styles.inputContainer}>
                 <TextInput
                     style={styles.input}
@@ -300,8 +320,8 @@ const ChatBot = () => {
                     <Icon name="send" size={20} color="#8B5CF6" />
                 </TouchableOpacity>
                 </View>
-            </View>
             </KeyboardAvoidingView>
+            </View>
         </View>
         </Modal>
     </>
@@ -331,7 +351,7 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   chatContainer: {
-    height: height * 0.85,
+    height: height * 0.75,
     backgroundColor: '#fff',
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
@@ -399,6 +419,8 @@ const styles = StyleSheet.create({
   },
   messageBubble: {
     maxWidth: '80%',
+    maxHeight: 110,
+    overflow: 'hidden',
     padding: 12,
     borderRadius: 16,
     marginBottom: 8,
@@ -413,7 +435,7 @@ const styles = StyleSheet.create({
   },
   messageText: {
     color: '#4C3575',
-    fontSize: 16,
+    fontSize: 15,
     fontFamily: Platform.OS === 'ios' ? 'SF Pro Rounded' : 'Roboto',
   },
   timestamp: {

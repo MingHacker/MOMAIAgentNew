@@ -14,6 +14,7 @@ import FeatureCardList from '../components/FeatureCardList';
 
 import { getUserFeatures } from '../services/feature';
 import { api, Reminder } from '../src/api';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { useApiRequest } from '../services/hooks/useAPIRequest';
 import { usePostRequest } from '../services/hooks/usePostRequest';
@@ -61,6 +62,7 @@ const DashboardScreen = () => {
         if (babies && babies.length > 0) {
           // Assuming we display the first baby for now
           const mappedInfo = mapBabyProfileToBabyInfo(babies[0]);
+          AsyncStorage.setItem('baby_id', mappedInfo.id);
           setBabyInfo(mappedInfo);
           fetchReminders(mappedInfo.id);
         } else {

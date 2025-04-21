@@ -28,9 +28,17 @@ client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 supabase = get_supabase()
 security = HTTPBearer()
 
+class ChatMessageCreate(BaseModel):
+    message: str
+    role: str
+    emotion_label: Optional[str] = None
+    source: str = "chatbot"
+
+
 class ChatMessage(BaseModel):
     message: str
     role: str
+    timestamp: Optional[str] 
     emotion_label: Optional[str] = None
     source: str = "chatbot"
 
@@ -147,7 +155,6 @@ async def get_chat_history(
             .limit(limit)
             .execute()
         )
-        print(result.data)
         return result.data or []
 
     except Exception as e:
@@ -158,7 +165,7 @@ async def get_chat_history(
 
 @router.post("/chat/send", response_model=ChatResponse)
 async def send_chat_message(
-    chat_message: ChatMessage,
+    chat_message: ChatMessageCreate,
     supabase: SupabaseService = Depends(get_supabase),
     user_id: str = Depends(get_current_user)
 ):
@@ -203,3 +210,27 @@ async def send_chat_message(
         print("❌ Chat error:", str(e))
         raise HTTPException(status_code=500, detail=str(e))
 
+
+@router.post("/chat/save", response_model=ChatResponse)
+async def save_chat_message(
+    chat_message: ChatMessageCreate,
+    supabase: SupabaseService = Depends(get_supabase),
+    user_id: str = Depends(get_current_user)
+):
+    try:
+        
+        result = supabase.insert("chat_logs", {
+            "mom_id": user_id,
+            "role": chat_message.role,
+            "message": chat_message.message,
+            "emotion_label": chat_message.emotion_label or None,
+            "source": chat_message.source,
+            "timestamp": datetime.now().isoformat()
+        })
+
+        if not result:
+            raise HTTPException(status_code=500, detail="Failed to insert chat")
+
+        return ChatResponse(success=True, message="Saved")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

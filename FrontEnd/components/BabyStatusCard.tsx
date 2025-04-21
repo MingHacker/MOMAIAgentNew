@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity, Platform } from 'react-native';
 import { babyApi, BabyRawDataResponse } from '../src/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import dayjs from 'dayjs';
@@ -14,15 +14,15 @@ export default function BabyStatusCard() {
       setLoading(true);
       const babyId = await AsyncStorage.getItem('baby_id');
       if (!babyId) {
-        setError('未找到宝宝信息');
+        setError('No baby info found');
         return;
       }
 
       const response = await babyApi.getRawDailyData(babyId);
       setDailyData(response);
     } catch (error) {
-      console.error('获取宝宝数据失败:', error);
-      setError('获取数据失败，请稍后重试');
+      console.error('Failed to fetch baby data:', error);
+      setError('Failed to fetch baby data');
     } finally {
       setLoading(false);
     }
@@ -37,37 +37,24 @@ export default function BabyStatusCard() {
   if (loading) {
     return (
       <View style={styles.card}>
-        <ActivityIndicator size="large" color="#8B5CF6" />
-        <Text style={styles.tip}>加载中...</Text>
+        <ActivityIndicator size="small" color="#8B5CF6" />
+        <Text style={styles.summaryText}>Loading baby status...</Text>
       </View>
     );
   }
 
-  if (error) {
+  if (error || !dailyData?.success) {
     return (
       <View style={styles.card}>
-        <Text style={styles.title}>👶 宝宝今日数据</Text>
-        <Text style={styles.error}>{error}</Text>
+        <Text style={styles.summaryText}> No data available today</Text>
         <TouchableOpacity style={styles.refreshButton} onPress={fetchBabyData}>
-          <Text style={styles.refreshText}>刷新</Text>
+          <Text style={styles.refreshText}>Refresh</Text>
         </TouchableOpacity>
       </View>
     );
   }
 
-  if (!dailyData?.success) {
-    return (
-      <View style={styles.card}>
-        <Text style={styles.title}>👶 宝宝今日数据</Text>
-        <Text style={styles.tip}>暂无今日数据</Text>
-        <TouchableOpacity style={styles.refreshButton} onPress={fetchBabyData}>
-          <Text style={styles.refreshText}>刷新</Text>
-        </TouchableOpacity>
-      </View>
-    );
-  }
-
-  // 计算今日数据
+  // Daily baby summary
   const todayData = {
     feeding: dailyData.summary.feed.reduce((sum, item) => sum + Number(item.feedAmount || 0), 0),
     sleep: dailyData.summary.sleep.reduce((sum, item) => {
@@ -81,37 +68,19 @@ export default function BabyStatusCard() {
 
   return (
     <View style={styles.card}>
-      <View style={styles.header}>
-        <Text style={styles.title}>👶 Baby's Daily Stats</Text>
-        <View style={styles.headerRight}>
-          <Text style={styles.time}>Updated: {dayjs().format('HH:mm')}</Text>
-          <TouchableOpacity style={styles.refreshButton} onPress={fetchBabyData}>
-            <Text style={styles.refreshText}>Refresh</Text>
-          </TouchableOpacity>
+      <View style={styles.row}>
+        {/* Left: Baby summary message */}
+        <View style={styles.left}>
+          <Text style={styles.summaryText}>
+          🩷Baby seems happy today — well fed and well rested 💫
+          </Text>
         </View>
-      </View>
-      
-      <View style={styles.dataContainer}>
-        <View style={styles.dataRow}>
-          <View style={styles.dataItem}>
-            <Text style={styles.dataLabel}>🍼 Feeding</Text>
-            <Text style={styles.dataValue}>{todayData.feeding}ml</Text>
-          </View>
-          <View style={styles.dataItem}>
-            <Text style={styles.dataLabel}>💤 Sleep</Text>
-            <Text style={styles.dataValue}>{todayData.sleep.toFixed(1)}hr</Text>
-          </View>
-        </View>
-        
-        <View style={styles.dataRow}>
-          <View style={styles.dataItem}>
-            <Text style={styles.dataLabel}>💩 Diaper</Text>
-            <Text style={styles.dataValue}>{todayData.diaper} times</Text>
-          </View>
-          <View style={styles.dataItem}>
-            <Text style={styles.dataLabel}>😢 Crying</Text>
-            <Text style={styles.dataValue}>{todayData.cry}min</Text>
-          </View>
+
+        {/* Right: Data stack */}
+        <View style={styles.right}>
+          <Text style={styles.dataItem}>🍼 {todayData.feeding}ml</Text>
+          <Text style={styles.dataItem}>💤 {todayData.sleep.toFixed(1)}h</Text>
+          <Text style={styles.dataItem}>💩 {todayData.diaper}x 😢 {todayData.cry}min</Text>
         </View>
       </View>
     </View>
@@ -120,84 +89,61 @@ export default function BabyStatusCard() {
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: '#f9f9f9',
-    borderRadius: 12,
-    padding: 16,
+    backgroundColor: '#F9F7FF',
+    borderRadius: 16,
+    paddingVertical: 12,     // ↓ from 16 → 12
+    paddingHorizontal: 14,   // ↓ slightly
     marginHorizontal: 16,
-    marginTop: 16,
-    shadowColor: '#ccc',
-    shadowOpacity: 0.2,
-    shadowOffset: { width: 0, height: 1 },
-    shadowRadius: 4,
+    marginTop: 12,           // ↓ from 16
+    shadowColor: '#000',
+    shadowOpacity: 0.08,
+    shadowOffset: { width: 0, height: 4 },
+    shadowRadius: 10,
     elevation: 2,
-    minHeight: 120,
   },
-  header: {
+  row: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    width: '100%',
-    marginBottom: 16,
+    alignItems: 'flex-start',
   },
-  headerRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
+  left: {
+    flex: 2,
+    paddingRight: 12,
   },
-  title: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#4C3575',
+  right: {
+    flex: 1.1,
+    alignItems: 'flex-end',
   },
-  time: {
-    fontSize: 12,
-    color: '#666',
-  },
-  dataContainer: {
-    width: '100%',
-  },
-  dataRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 12,
+  summaryText: {
+    fontSize: 14,
+    color: '#6B21A8',
+    fontFamily: Platform.select({
+      ios: 'AvenirNextRounded-Regular',
+      android: 'sans-serif-light',
+    }),
+    lineHeight: 20,
   },
   dataItem: {
-    flex: 1,
-    padding: 8,
-    backgroundColor: '#F3E8FF',
-    borderRadius: 8,
-    marginHorizontal: 4,
-    alignItems: 'center',
-  },
-  dataLabel: {
-    fontSize: 14,
-    color: '#4C3575',
+    fontSize: 13,
+    color: '#8B5CF6',
+    fontFamily: Platform.select({
+      ios: 'AvenirNextRounded-Regular',
+      android: 'sans-serif-light',
+    }),
     marginBottom: 4,
   },
-  dataValue: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#8B5CF6',
-  },
-  error: {
-    fontSize: 14,
-    color: '#EF4444',
-    textAlign: 'center',
-    marginBottom: 8,
-  },
-  tip: {
-    fontSize: 13,
-    color: '#666',
-    marginTop: 8,
-    textAlign: 'center',
-  },
   refreshButton: {
+    marginTop: 10,
     padding: 4,
-    backgroundColor: '#F3E8FF',
+    backgroundColor: '#EDE9FE',
     borderRadius: 4,
   },
   refreshText: {
     color: '#8B5CF6',
     fontSize: 12,
+    fontFamily: Platform.select({
+      ios: 'AvenirNextRounded-Regular',
+      android: 'sans-serif-light',
+    }),
   },
 });

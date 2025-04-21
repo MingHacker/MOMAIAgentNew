@@ -15,10 +15,13 @@ import MomStatusCard from '../components/MomStatusCard';
 import { momApi } from '../src/api';  // Make sure this is imported
 import { babyApi } from '../src/api';  // Make sure this is imported
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import MoodSelector from '../components/MoodSelector';
+
 import dayjs from 'dayjs';
 
 // 设备宽度，用于控制图表大小
 const screenWidth = Dimensions.get('window').width;
+
 
 // x轴标签（示例：一周）
 const weekLabels = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
@@ -28,6 +31,7 @@ export default function HealthSummaryScreen() {
   const [momData, setMomData] = useState<any>(null);
   const [babySummary, setBabySummary] = useState<string | null>(null);
   const [momSummary, setMomSummary] = useState<string | null>(null);
+  const [mood, setMood] = useState<string | null>(null); 
 
   // 获取妈妈的健康数据
   useEffect(() => {
@@ -85,18 +89,21 @@ export default function HealthSummaryScreen() {
       <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 20 }}>
         <BabyStatusCard summary={babySummary} />
         <MomStatusCard summary={momSummary} />
-        
+        <MoodSelector mood={mood} setMood={setMood} />
+
+
         {/* Baby Feeding Card */}
         <View style={styles.card}>
           <View style={styles.cardHeader}>
             <Text style={styles.cardHeaderTitle}>Baby Feeding (mL)</Text>
-            <Text style={styles.cardHeaderSubtitle}>Today {babyData[0].feed_total_ml} ml</Text>
+            <Text style={styles.cardHeaderSubtitle}>
+              Today {babyData?.[6]?.feed_total_ml ?? '--'} ml</Text>
           </View>
           <LineChart
             data={{
               labels: weekLabels,
               datasets: [
-                { data: babyData.map((item) => item.feed_total_ml) }, // 用真实数据
+                { data: babyData?.map((item) => item.feed_total_ml) ?? [0] }, // 用真实数据
               ],
             }}
             width={screenWidth * 0.9}
@@ -111,13 +118,14 @@ export default function HealthSummaryScreen() {
         <View style={styles.card}>
               <View style={styles.cardHeader}>
                 <Text style={styles.cardHeaderTitle}>Sleep</Text>
-                <Text style={styles.cardHeaderSubtitle}>Today {babyData[6].sleep_total_hours}hr</Text>
+                <Text style={styles.cardHeaderSubtitle}>
+                  Today {babyData?.[6]?.sleep_total_hours ?? '--'} hr</Text>
               </View>
               <LineChart
                 data={{
                   labels: weekLabels,
                   datasets: [
-                    { data: babyData.map((item) => item.sleep_total_hours) },
+                    { data: babyData?.map((item) => item.sleep_total_hours) ?? [0] },
                   ],
                 }}
                 width={screenWidth * 0.9}
@@ -132,13 +140,35 @@ export default function HealthSummaryScreen() {
             <View style={styles.card}>
               <View style={styles.cardHeader}>
                 <Text style={styles.cardHeaderTitle}>Diaper</Text>
-                <Text style={styles.cardHeaderSubtitle}>Today {babyData[6].diaper_count} times</Text>
+                <Text style={styles.cardHeaderSubtitle}>
+                  Today {babyData?.[6]?.diaper_count ?? '--'} times</Text>
               </View>
               <BarChart
                 data={{
                   labels: weekLabels,
                   datasets: [
-                    { data: babyData.map((item) => item.diaper_count) },
+                    { data: babyData?.map((item) => item.diaper_count) ?? [0] },
+                  ],
+                }}
+                width={screenWidth * 0.9}
+                height={150}
+                chartConfig={chartConfig}
+                style={styles.chartStyle}
+              />
+            </View>
+
+            {/* Baby Diaper Card */}
+            <View style={styles.card}>
+              <View style={styles.cardHeader}>
+                <Text style={styles.cardHeaderTitle}>Diaper Solid</Text>
+                <Text style={styles.cardHeaderSubtitle}>
+                  Today {babyData?.[6]?.bowel_count ?? '--'} times</Text>
+              </View>
+              <BarChart
+                data={{
+                  labels: weekLabels,
+                  datasets: [
+                    { data: babyData?.map((item) => item.diaper_count) ?? [0] },
                   ],
                 }}
                 width={screenWidth * 0.9}
@@ -152,14 +182,15 @@ export default function HealthSummaryScreen() {
             <View style={styles.card}>
               <View style={styles.cardHeader}>
                 <Text style={styles.cardHeaderTitle}>Outside</Text>
-                <Text style={styles.cardHeaderSubtitle}>Today {babyData[6].outside_total_minutes}min</Text>
+                <Text style={styles.cardHeaderSubtitle}>
+                  Today {babyData?.[6]?.outside_total_minutes ?? '--'} min</Text>
               </View>
 
               <BarChart
                 data={{
                   labels: weekLabels,
                   datasets: [
-                    { data: babyData.map((item) => item.outside_total_minutes) },
+                    { data: babyData?.map((item) => item.outside_total_minutes) ?? [0] },
                   ],
                 }}
                 width={screenWidth * 0.9}
@@ -173,14 +204,15 @@ export default function HealthSummaryScreen() {
             <View style={styles.card}>
               <View style={styles.cardHeader}>
                 <Text style={styles.cardHeaderTitle}>Cry</Text>
-                <Text style={styles.cardHeaderSubtitle}>Today {babyData[6].cry_total_minutes}min</Text>
+                <Text style={styles.cardHeaderSubtitle}>
+                  Today {babyData?.[6]?.cry_total_minutes ?? '--'} min</Text>
               </View>
 
               <BarChart
                 data={{
                   labels: weekLabels,
                   datasets: [
-                    { data: babyData.map((item) => item.cry_total_minutes) },
+                    { data: babyData?.map((item) => item.cry_total_minutes) ?? [0] },
                   ],
                 }}
                 width={screenWidth * 0.9}
@@ -197,13 +229,14 @@ export default function HealthSummaryScreen() {
         <View style={styles.card}>
           <View style={styles.cardHeader}>
             <Text style={styles.cardHeaderTitle}>Heart Rate (HR)</Text>
-            <Text style={styles.cardHeaderSubtitle}>Today {momData[6].resting_heart_rate} bpm</Text>
+            <Text style={styles.cardHeaderSubtitle}>
+              Today {momData?.[6]?.resting_heart_rate ?? '--'} bpm</Text>
           </View>
           <LineChart
             data={{
               labels: weekLabels,
               datasets: [
-                { data: momData.map((item) => item.resting_heart_rate) }, // 用真实数据
+                { data: momData?.map((item) => item.resting_heart_rate) ?? [0] }, // 用真实数据
               ],
             }}
             width={screenWidth * 0.9}
@@ -218,13 +251,14 @@ export default function HealthSummaryScreen() {
         <View style={styles.card}>
           <View style={styles.cardHeader}>
             <Text style={styles.cardHeaderTitle}>Sleep</Text>
-            <Text style={styles.cardHeaderSubtitle}>Today {momData[6].sleep_hours} hours</Text>
+            <Text style={styles.cardHeaderSubtitle}>
+              Today {momData?.[6]?.sleep_hours ?? '--'} hours</Text>
           </View>
           <LineChart
             data={{
               labels: weekLabels,
               datasets: [
-                { data: momData.map((item) => item.sleep_hours) }, // 用真实数据
+                { data: momData?.map((item) => item.sleep_hours) ?? [0] }, // 用真实数据
               ],
             }}
             width={screenWidth * 0.9}
@@ -239,13 +273,14 @@ export default function HealthSummaryScreen() {
         <View style={styles.card}>
           <View style={styles.cardHeader}>
             <Text style={styles.cardHeaderTitle}>HRV</Text>
-            <Text style={styles.cardHeaderSubtitle}>Today {momData[6].hrv}</Text>
+            <Text style={styles.cardHeaderSubtitle}>
+              Today {momData?.[6]?.hrv ?? '--'}</Text>
           </View>
           <LineChart
             data={{
               labels: weekLabels,
               datasets: [
-                { data: momData.map((item) => item.hrv) }, // 用真实数据
+                { data: momData?.map((item) => item.hrv) ?? [0] }, // 用真实数据
               ],
             }}
             width={screenWidth * 0.9}
@@ -260,13 +295,13 @@ export default function HealthSummaryScreen() {
         <View style={styles.card}>
           <View style={styles.cardHeader}>
             <Text style={styles.cardHeaderTitle}>Step</Text>
-            <Text style={styles.cardHeaderSubtitle}>Today {momData[6].step_count}</Text>
+            <Text style={styles.cardHeaderSubtitle}>Today {momData[6].steps}</Text>
           </View>
           <LineChart
             data={{
               labels: weekLabels,
               datasets: [
-                { data: momData.map((item) => item.step_count) }, // 用真实数据
+                { data: momData?.map((item) => item.steps) ?? [0] }, // 用真实数据
               ],
             }}
             width={screenWidth * 0.9}
@@ -281,13 +316,13 @@ export default function HealthSummaryScreen() {
         <View style={styles.card}>
           <View style={styles.cardHeader}>
             <Text style={styles.cardHeaderTitle}>Resting HR</Text>
-            <Text style={styles.cardHeaderSubtitle}>Today {momData[6].step_count}</Text>
+            <Text style={styles.cardHeaderSubtitle}>Today {momData[6].resting_heart_rate}</Text>
           </View>
           <LineChart
             data={{
               labels: weekLabels,
               datasets: [
-                { data: momData.map((item) => item.step_count) }, // 用真实数据
+                { data: momData?.map((item) => item.resting_heart_rate) ?? [0] }, // 用真实数据
               ],
             }}
             width={screenWidth * 0.9}
@@ -298,6 +333,26 @@ export default function HealthSummaryScreen() {
           />
         </View>
         
+        {/* Resting HR Card */}
+        <View style={styles.card}>
+          <View style={styles.cardHeader}>
+            <Text style={styles.cardHeaderTitle}>Calories Burned</Text>
+            <Text style={styles.cardHeaderSubtitle}>Today {momData[6].calories_burned}</Text>
+          </View>
+          <LineChart
+            data={{
+              labels: weekLabels,
+              datasets: [
+                { data: momData?.map((item) => item.calories_burned) ?? [0] }, // 用真实数据
+              ],
+            }}
+            width={screenWidth * 0.9}
+            height={150}
+            chartConfig={chartConfig}
+            style={styles.chartStyle}
+            bezier
+          />
+        </View>
 
       </ScrollView>
     </SafeAreaView>

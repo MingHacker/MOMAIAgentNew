@@ -1,27 +1,27 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity } from 'react-native';
 import { momApi, MomHealthResponse } from '../src/api';
+import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import dayjs from 'dayjs';
 
 export default function MomStatusCard() {
   const [loading, setLoading] = useState(true);
+  const [healthData, setHealthData] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
-  const [healthData, setHealthData] = useState<MomHealthResponse | null>(null);
 
   const fetchHealthData = async () => {
     try {
       setLoading(true);
       const response = await momApi.getTodayHealth();
-      if (!response.success || !response.summary?.data) {
-        setError('Oops, we couldn’t load your data. Please try again in a bit.');
-        return;
+      if (response.success && response.summary?.data) {
+        setHealthData(response.summary.data);
+      } else {
+        setError('No data available today');
       }
-      setHealthData({ success: true, data: response.summary.data });
-      console.log('📦 Mom Health Data:', response);
-    } catch (error) {
-      console.error('Failed to fetch mom health data:', error);
-      setError('Something went wrong while fetching your data.');
+    } catch (e) {
+      setError('Something went wrong.');
+      console.error(e);
     } finally {
       setLoading(false);
     }
@@ -29,168 +29,97 @@ export default function MomStatusCard() {
 
   useEffect(() => {
     fetchHealthData();
-    const interval = setInterval(fetchHealthData, 5 * 60 * 1000);
-    return () => clearInterval(interval);
   }, []);
 
   if (loading) {
     return (
       <View style={styles.card}>
-        <ActivityIndicator size="large" color="#8B5CF6" />
-        <Text style={styles.tip}>Loading your wellness info...</Text>
+        <ActivityIndicator size="small" color="#D946EF" />
+        <Text style={styles.moodText}>Loading today’s wellness...</Text>
       </View>
     );
   }
 
-  if (error) {
+  if (error || !healthData) {
     return (
       <View style={styles.card}>
-        <Text style={styles.title}>👩 Mom’s Wellness</Text>
-        <Text style={styles.error}>{error}</Text>
-        <TouchableOpacity style={styles.refreshButton} onPress={fetchHealthData}>
-          <Text style={styles.refreshText}>Try again</Text>
-        </TouchableOpacity>
+        <Text style={styles.moodText}>🌸 Data not available today</Text>
       </View>
     );
   }
-
-  if (!healthData?.success || !healthData?.data) {
-    return (
-      <View style={styles.card}>
-        <Text style={styles.title}>👩 Mom’s Wellness</Text>
-        <Text style={styles.tip}>No data available at the moment.</Text>
-        <TouchableOpacity style={styles.refreshButton} onPress={fetchHealthData}>
-          <Text style={styles.refreshText}>Refresh</Text>
-        </TouchableOpacity>
-      </View>
-    );
-  }
-
-  const todayData = healthData.data;
 
   return (
-    <View style={styles.card}>
-      <View style={styles.header}>
-        <Text style={styles.title}>👩 Mom’s Wellness</Text>
-        <View style={styles.headerRight}>
-          <Text style={styles.time}>Updated: {dayjs().format('HH:mm')}</Text>
-          <TouchableOpacity style={styles.refreshButton} onPress={fetchHealthData}>
-            <Text style={styles.refreshText}>Refresh</Text>
-          </TouchableOpacity>
-        </View>
+
+  <View style={styles.card}>
+    <View style={styles.row}>
+      {/* 左边 summary */}
+      <View style={styles.left}>
+        <Text style={styles.moodText}>
+        🩷 You're doing great today, mama! Be gentle with yourself 🌿
+        </Text>
       </View>
 
-      <View style={styles.dataContainer}>
-        <View style={styles.dataRow}>
-          <View style={styles.dataItem}>
-            <Text style={styles.dataLabel}>💤 Sleep</Text>
-            <Text style={styles.dataValue}>{todayData.sleep_hours.toFixed(1)} hrs</Text>
-          </View>
-          <View style={styles.dataItem}>
-            <Text style={styles.dataLabel}>💓 HRV</Text>
-            <Text style={styles.dataValue}>{todayData.hrv}</Text>
-          </View>
-        </View>
-
-        <View style={styles.dataRow}>
-          <View style={styles.dataItem}>
-            <Text style={styles.dataLabel}>🚶 Steps</Text>
-            <Text style={styles.dataValue}>{todayData.steps}</Text>
-          </View>
-          <View style={styles.dataItem}>
-            <Text style={styles.dataLabel}>✨ Status</Text>
-            <Text style={styles.dataValue}>Looking good 💜</Text>
-          </View>
+      {/* 右边垂直数据列表 */}
+      <View style={styles.right}>
+        <View style={styles.dataStack}>
+          <Text style={styles.dataItem}>💓 {healthData.hrv}</Text>
+          <Text style={styles.dataItem}>💤 {healthData.sleep_hours.toFixed(1)}h</Text>
+          <Text style={styles.dataItem}>🚶 {healthData.steps}</Text>
         </View>
       </View>
     </View>
+  </View>
   );
 }
 
-const styles = StyleSheet.create({
+
+export const styles = StyleSheet.create({
   card: {
-    backgroundColor: '#fff',
+    backgroundColor: '#F9F7FF',
     borderRadius: 16,
-    padding: 16,
+    paddingVertical: 12,     // ↓ from 16 → 12
+    paddingHorizontal: 14,   // ↓ slightly
     marginHorizontal: 16,
-    marginTop: 16,
-    shadowColor: '#ccc',
-    shadowOpacity: 0.2,
-    shadowOffset: { width: 0, height: 2 },
-    shadowRadius: 8,
-    elevation: 3,
-    minHeight: 120,
+    marginTop: 12,           // ↓ from 16
+    shadowColor: '#000',
+    shadowOpacity: 0.08,
+    shadowOffset: { width: 0, height: 4 },
+    shadowRadius: 10,
+    elevation: 2,
   },
-  header: {
+  row: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    width: '100%',
-    marginBottom: 16,
+    alignItems: 'flex-start',
   },
-  headerRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
+  left: {
+    flex: 1.7,
+    paddingRight: 8,
   },
-  title: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#8B5CF6',
+  right: {
+    flex: 1,
+    alignItems: 'flex-end',
   },
-  time: {
-    fontSize: 12,
-    color: '#666',
+  dataStack: {
+    justifyContent: 'flex-start',
+    alignItems: 'flex-end',
   },
-  dataContainer: {
-    width: '100%',
-  },
-  dataRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 12,
+  moodText: {
+    fontSize: 14,
+    color: '#6B21A8',
+    fontFamily: Platform.select({
+      ios: 'AvenirNextRounded-Regular',
+      android: 'sans-serif-light',
+    }),
+    lineHeight: 20,
   },
   dataItem: {
-    flex: 1,
-    padding: 12,
-    backgroundColor: '#F3E8FF',
-    borderRadius: 12,
-    marginHorizontal: 4,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#EDE9FE',
-  },
-  dataLabel: {
-    fontSize: 14,
-    color: '#4C3575',
-    marginBottom: 4,
-  },
-  dataValue: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#8B5CF6',
-  },
-  error: {
-    fontSize: 14,
-    color: '#EF4444',
-    textAlign: 'center',
-    marginBottom: 8,
-  },
-  tip: {
     fontSize: 13,
-    color: '#666',
-    marginTop: 8,
-    textAlign: 'center',
-  },
-  refreshButton: {
-    padding: 4,
-    backgroundColor: '#F3E8FF',
-    borderRadius: 4,
-    borderWidth: 1,
-    borderColor: '#EDE9FE',
-  },
-  refreshText: {
     color: '#8B5CF6',
-    fontSize: 12,
+    fontFamily: Platform.select({
+      ios: 'AvenirNextRounded-Regular',
+      android: 'sans-serif-light',
+    }),
+    marginBottom: 4,
   },
 });

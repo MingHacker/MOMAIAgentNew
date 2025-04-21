@@ -1,11 +1,12 @@
 import json
+from typing import List, Dict
 from fastapi.responses import JSONResponse
 from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPBearer
 from fastapi.encoders import jsonable_encoder
 from pydantic import BaseModel
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from typing import Optional, Literal
 import os
 from supabase import create_client, Client
@@ -262,25 +263,91 @@ async def update_reminder_status(reminder_id: str, user_id: str = Depends(get_cu
         # Catch specific Supabase/DB errors if possible, otherwise generic error
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
+def calculate_daily_summary(reminder, baby_id):
+    """Calculate daily summary statistics for a given reminder."""
+    try:
+        reminder_date = datetime.fromisoformat(reminder['reminder_time']).date()
+        start_date = datetime.combine(reminder_date, datetime.min.time())
+        end_date = start_date + timedelta(days=1)
+        
+        # Get logs for this day
+        logs = supabase.table("baby_logs").select("*").eq("baby_id", baby_id).eq("log_type", reminder.get('reminder_type')).gte("logged_at", start_date.isoformat()).lt("logged_at", end_date.isoformat()).execute().data
+        
+        # Calculate summary based on reminder type
+        summary = {}
+        if reminder['reminder_type'] == 'sleep':
+            sleep_logs = [log for log in logs if log['log_type'] == 'sleep']
+            total_mins = 0
+            for log in sleep_logs:
+                try:
+                    start = datetime.strptime(log['log_data']['sleepStart'], "%H:%M")
+                    end = datetime.strptime(log['log_data']['sleepEnd'], "%H:%M")
+                    total_mins += (end - start).total_seconds() / 60
+                except (KeyError, ValueError):
+                    pass
+            summary = {"totalmins": total_mins}
+            
+        elif reminder['reminder_type'] == 'diaper':
+            diaper_logs = [log for log in logs if log['log_type'] == 'diaper']
+            solid = sum(1 for log in diaper_logs if log['log_data'].get('diaperSolid', False))
+            wet = sum(1 for log in diaper_logs if not log['log_data'].get('diaperSolid', True))
+            summary = {"solid": solid, "wet": wet}
+            
+        elif reminder['reminder_type'] == 'feeding':
+            feed_logs = [log for log in logs if log['log_type'] == 'feeding']
+            total_ml = sum(int(log['log_data'].get('feedAmount', 0)) for log in feed_logs)
+            summary = {"totalamountInML": total_ml}
+    
+        return json.dumps(summary, default=str)
+    except Exception as e:
+        print(f"Error generating summary for reminder {reminder.get('id')}: {str(e)}")
+        return None
+
 @app.get("/reminders")
 async def get_reminders(
     baby_id: str, 
     upcoming: Optional[bool] = False, 
     user_id: str = Depends(get_current_user)
 ):
-    """Fetch reminders for a specific baby (owned by user), optionally filtering for upcoming reminders."""
-    await _verify_baby_ownership(baby_id, user_id) # Verify ownership first
+    """Fetch reminders with daily summary statistics"""
+    await _verify_baby_ownership(baby_id, user_id)
     try:
-        # query = supabase.table("reminders").select("*").eq("baby_id", baby_id).eq("user_id", user_id) # Removed user_id filter
         query = supabase.table("reminders").select("*").eq("baby_id", baby_id).eq("is_completed", False)
         
         if upcoming:
             query = query.gt("reminder_time", datetime.now().isoformat())
             
         result = query.order("reminder_time").execute()
-        return result.data
+        reminders = result.data
+        reminders = get_latest_reminders(reminders)  # Get the latest reminders for each type
+        # Add daily summary statistics
+        for reminder in reminders:
+            reminder['daily_summary'] = calculate_daily_summary(reminder, baby_id)
+
+        return reminders
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
+def get_latest_reminders(reminders: List[Dict]) -> List[Dict]:
+    """
+    Returns the most recent reminder for each reminder_type.
+
+    Args:
+        reminders: List of reminders, each with 'reminder_type' and 'reminder_time' (ISO string).
+
+    Returns:
+        List of reminders with the latest entry for each type.
+    """
+    latest = {}
+
+    for r in reminders:
+        r_type = r["reminder_type"]
+        r_time = datetime.fromisoformat(r["reminder_time"])
+
+        if r_type not in latest or r_time > datetime.fromisoformat(latest[r_type]["reminder_time"]):
+            latest[r_type] = r
+
+    return list(latest.values())
 
 # --- Health Prediction Endpoints ---
 @app.post("/health_predictions", status_code=status.HTTP_201_CREATED)

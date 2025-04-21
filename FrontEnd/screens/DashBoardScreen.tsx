@@ -167,12 +167,16 @@ const DashboardScreen = () => {
                     key={reminder.id}
                     featureId={reminder.reminder_type}
                     reminderTime={reminder.reminder_time}
+                    reminderType={reminder.reminder_type}
+                    dailySummary={reminder.daily_summary}
                   />
                   {upcomingReminders[index + 1] ? (
                     <FeatureCard
                       key={upcomingReminders[index + 1].id}
                       featureId={upcomingReminders[index + 1].reminder_type}
                       reminderTime={upcomingReminders[index + 1].reminder_time}
+                      reminderType={upcomingReminders[index + 1].reminder_type}
+                      dailySummary={upcomingReminders[index + 1].daily_summary}
                     />
                   ) : null}
                 </View>

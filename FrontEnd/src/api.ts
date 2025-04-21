@@ -320,7 +320,9 @@ export const api = {
       if (!response.data) {
         return [];
       }
+      console.log('chat history from api ts:', response.data);
       return response.data;
+      
     } catch (error) {
       console.error('Failed to get chat history:', error);
       return [];
@@ -397,14 +399,14 @@ export type MomHealthResponse = {
   data: MomHealthData[];
 };
 
-const momApi = {
+export const momApi = {
   getTodaySummary: async (): Promise<MomSummaryResponse> => {
     try {
-      const response = await axiosInstance.get<MomSummaryResponse>('/api/mom/summary');
+      const response = await axiosInstance.get('/api/mom/summary');
       return response.data;
     } catch (error) {
       handleApiError(error);
-      return { success: false, summary: 'Failed to load summary.' };
+      return { success: false, summary: '' };
     }
   },
 
@@ -464,11 +466,14 @@ export type BabyRawDataResponse = {
   };
 };
 
-const babyApi = {
-  getDailySummary: async (babyId: string): Promise<BabySummaryResponse> => {
+export const babyApi = {
+  // ✅ 获取今天的宝宝总结分析
+  getTodaySummary: async (babyId: string): Promise<BabySummaryResponse> => {
     try {
       const res = await axiosInstance.get<BabySummaryResponse>(
-        `/api/baby/health/daily/${babyId}`
+        `/api/baby/summary`, {
+          params: { baby_id: babyId }
+        }
       );
       return res.data;
     } catch (error) {
@@ -477,10 +482,13 @@ const babyApi = {
     }
   },
 
+  // ✅ 获取宝宝一周总结
   getWeeklySummary: async (babyId: string): Promise<BabyWeeklySummaryResponse> => {
     try {
       const res = await axiosInstance.get<BabyWeeklySummaryResponse>(
-        `/api/baby/summary/week?baby_id=${babyId}`
+        `/api/baby/summary/week`, {
+          params: { baby_id: babyId }
+        }
       );
       return res.data;
     } catch (error) {
@@ -489,10 +497,13 @@ const babyApi = {
     }
   },
 
+  // ✅ 获取宝宝的原始 daily 数据（睡眠、喝奶等）
   getRawDailyData: async (babyId: string): Promise<BabyRawDataResponse> => {
     try {
       const res = await axiosInstance.get<BabyRawDataResponse>(
-        `/api/baby/health/daily?baby_id=${babyId}`
+        `/api/baby/health/daily`, {
+          params: { baby_id: babyId }
+        }
       );
       return res.data;
     } catch (error) {

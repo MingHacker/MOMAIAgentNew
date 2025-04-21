@@ -9,10 +9,11 @@ import Icon from 'react-native-vector-icons/MaterialIcons';
 import BabyInfoCard from '../components/BabyInfoCard';
 import FeatureCard from '../components/FeatureCard';
 import RecordModal from '../components/RecordModal';
-
+import MomDashboardSentence from '../components/MomDashboardSentence';
 
 import { getUserFeatures } from '../services/feature';
 import { api, Reminder } from '../src/api';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { useApiRequest } from '../services/hooks/useAPIRequest';
 import { usePostRequest } from '../services/hooks/usePostRequest';
@@ -60,6 +61,7 @@ const DashboardScreen = () => {
         if (babies && babies.length > 0) {
           // Assuming we display the first baby for now
           const mappedInfo = mapBabyProfileToBabyInfo(babies[0]);
+          AsyncStorage.setItem('baby_id', mappedInfo.id);
           setBabyInfo(mappedInfo);
           fetchReminders(mappedInfo.id);
           
@@ -158,6 +160,7 @@ const DashboardScreen = () => {
     <SafeAreaView style={styles.safeArea}>
       <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 100 }}>
         {babyInfo && <BabyInfoCard babyInfo={babyInfo} />}
+        <MomDashboardSentence />
         {upcomingReminders.length > 0 ? (
           upcomingReminders.reduce((rows: JSX.Element[], reminder, index) => {
             if (index % 2 === 0) {

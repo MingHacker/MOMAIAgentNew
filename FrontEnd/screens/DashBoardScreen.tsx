@@ -9,7 +9,7 @@ import Icon from 'react-native-vector-icons/MaterialIcons';
 import BabyInfoCard from '../components/BabyInfoCard';
 import FeatureCard from '../components/FeatureCard';
 import RecordModal from '../components/RecordModal';
-
+import MomDashboardSentence from '../components/MomDashboardSentence';
 
 import { getUserFeatures } from '../services/feature';
 import { api, Reminder } from '../src/api';
@@ -160,6 +160,7 @@ const DashboardScreen = () => {
     <SafeAreaView style={styles.safeArea}>
       <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 100 }}>
         {babyInfo && <BabyInfoCard babyInfo={babyInfo} />}
+        <MomDashboardSentence />
         {upcomingReminders.length > 0 ? (
           upcomingReminders.reduce((rows: JSX.Element[], reminder, index) => {
             if (index % 2 === 0) {

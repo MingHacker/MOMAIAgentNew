@@ -18,13 +18,21 @@ const BabyInfoCard: React.FC<BabyInfoCardProps> = ({ babyInfo }) => {
   return (
     <View style={styles.card}>
       <View style={styles.header}>
-        <Image source={{ uri: babyInfo.avatar }} style={styles.avatar} />
-        <Text style={styles.name}>{babyInfo.name}</Text>
-      </View>
-      <View style={styles.stats}>
-        <Text>Weight: {babyInfo.weight}</Text>
-        <Text>Height: {babyInfo.height}</Text>
-        <Text>Age: {babyInfo.age}</Text>
+        <View style={styles.leftSection}>
+          <Image source={{ uri: babyInfo.avatar }} style={styles.avatar} />
+          <Text style={styles.name}>{babyInfo.name}</Text>
+        </View>
+        <View style={styles.rightSection}>
+          <View style={styles.statItem}>
+            <Text style={styles.statLabel}>Age: {babyInfo.age} days</Text>
+          </View>
+          <View style={styles.statItem}>
+            <Text style={styles.statLabel}>Weight: {babyInfo.weight} kg</Text>
+          </View>
+          <View style={styles.statItem}>
+            <Text style={styles.statLabel}>Height: {babyInfo.height} cm</Text>
+          </View>
+        </View>
       </View>
     </View>
   );
@@ -34,13 +42,21 @@ const styles = StyleSheet.create({
   card: {
     padding: 16,
     backgroundColor: '#fff',
-    marginBottom: 16,
+    marginBottom: 8,
     borderRadius: 16,
-    elevation: 3,
+    elevation: 1,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  leftSection: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  rightSection: {
+    alignItems: 'flex-end',
   },
   avatar: {
     width: 60,
@@ -52,8 +68,18 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
   },
-  stats: {
-    marginTop: 10,
+  statItem: {
+    alignItems: 'flex-end',
+    marginBottom: 4,
+  },
+  statLabel: {
+    fontSize: 12,
+    color: '#666',
+  },
+  statValue: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#333',
   },
 });
 

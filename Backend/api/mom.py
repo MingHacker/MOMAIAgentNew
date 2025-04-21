@@ -155,5 +155,6 @@ def get_mom_weekly_health(user_id: str = Depends(get_current_user)):
             }))
 
         return {"success": True, "data": output}
+        print(f"momweekly返回的数据：{output}")  
     except Exception as e:
         return {"success": False, "summary": str(e)}

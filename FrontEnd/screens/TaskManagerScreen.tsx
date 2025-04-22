@@ -309,8 +309,6 @@ export default function TaskManagerScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
         <View style={styles.container}>
-          <Text style={styles.title}>📋 Task</Text>
-
           {/* 这块如果你需要分类卡片，也可再写renderCategoryCard之类的 */}
           <View style={styles.cardRow}>
             {renderCategoryCard('健康', '健康', '#E8EAF6')}

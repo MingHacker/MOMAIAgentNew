@@ -14,6 +14,7 @@ def build_task_prompt(
 
     PROMPT_TEMPLATE = """
 你是一位智能的妈妈生活助理。请根据以下信息，为妈妈生成 1–4 条待办任务，并**只用纯 JSON** 输出。
+然后再把主任务归类成家庭，健康，宝宝，其他 的其中一个类型，返回一个 JSON 对象，顶层字段必须是 "category"。
 
 【妈妈健康状态】
 {mom_health_status}
@@ -32,6 +33,7 @@ def build_task_prompt(
 
 **示例**  
 {{
+  "category": "Family",
   "tasks": [
     {{"title": "准备宝宝的奶瓶"}},
     {{"title": "准备宝宝尿不湿"}}

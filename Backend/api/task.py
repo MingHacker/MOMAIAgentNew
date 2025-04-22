@@ -34,6 +34,7 @@ class SimpleTaskModel(BaseModel):
 class GPTTaskResponse(BaseModel):
     success: bool
     message: str
+    category: str
     output: List[SimpleTaskModel]
 
 async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
@@ -63,6 +64,7 @@ async def create_task_from_gpt(req: GPTTaskRequest = Body(...), user_id: str = D
     # 调用 runner 获取任务输出
     result = run_task_manager(req.model_dump())
     task_output = result["task_output"]
+    category = task_output["category"]
     tasks = task_output["tasks"]
 
     if not isinstance(tasks, list) or not tasks:
@@ -74,5 +76,6 @@ async def create_task_from_gpt(req: GPTTaskRequest = Body(...), user_id: str = D
     return GPTTaskResponse(
         success=True,
         message=task_output.get("message", "任务生成成功"),
+        category=category,
         output=simple_tasks
     )

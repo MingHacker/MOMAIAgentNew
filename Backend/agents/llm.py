@@ -1,10 +1,46 @@
 import json
+import re
 from typing import Dict, Optional
 from openai import OpenAI
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
 
 CATEGORIES = ["baby_care", "shopping", "housework", "healthcare", "self_care", "work", "other"]
 
-client = OpenAI()
+load_dotenv()
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
+def parse_gpt_json(content: str):
+    try:
+        # 优先用正则提取 JSON 代码块
+        match = re.search(r"```json\n(.*?)\n```", content, re.DOTALL)
+        if match:
+            json_str = match.group(1)
+        else:
+            # 回退方式：直接找 { 开始
+            json_start = content.find("{")
+            if json_start == -1:
+                print("❌ 未找到 JSON 内容")
+                return {"tasks": []}
+            json_str = content[json_start:]
+
+        # 尝试解析 JSON
+        try:
+            result = json.loads(json_str)
+            if "tasks" not in result:
+                print("❌ 返回结果缺少 tasks 字段")
+                return {"tasks": []}
+            return result
+        except json.JSONDecodeError as e:
+            print("❌ JSON 解析失败:", str(e))
+            return {"tasks": []}
+
+    except Exception as e:
+        print("❌ GPT 调用失败:", str(e))
+        return {"tasks": []}
+
 
 def call_gpt_json_newversion(prompt: str) -> Dict:
     try:
@@ -28,7 +64,8 @@ def call_gpt_json_newversion(prompt: str) -> Dict:
                 }
             ],
             temperature=0.6,
-            max_tokens=300
+            max_tokens=800
+            #print("📬 GPT 回复内容:", response)
         )
 
         content = response.choices[0].message.content.strip()
@@ -59,44 +96,51 @@ def call_gpt_json(prompt: str) -> dict:
         print("📝 Prompt:", prompt)
         
         response = client.chat.completions.create(
-            model="gpt-4o-mini",
+            model="gpt-4o",
             messages=[
                 {"role": "system", "content": "你是一个善于将任务结构化的生活助理，只返回 JSON 格式的任务列表"},
                 {"role": "user", "content": prompt}
             ],
             temperature=0.3
         )
-
+        print("📬 GPT 回复内容:", response)
         content = response.choices[0].message.content
-        print("📬 GPT 回复内容:", content)
 
-        json_start = content.find("{")
-        if json_start == -1:
-            print("❌ 未找到 JSON 内容")
+        if isinstance(content, str):
+            return parse_gpt_json(content)  # content 是字符串，解析成 dict
+        elif isinstance(content, dict):
+            return content  # content 已经是 dict，不需要再解析
+        else:
+            print("⚠️ GPT 回复格式异常")
             return {"tasks": []}
         
-        json_str = content[json_start:]
-        try:
-            result = json.loads(json_str)
-            if "tasks" not in result:
-                print("❌ 返回结果缺少 tasks 字段")
-                return {"tasks": []}
-            return result
-        except json.JSONDecodeError as e:
-            print("❌ JSON 解析失败:", str(e))
-            return {"tasks": []}
-
     except Exception as e:
         print("❌ GPT 调用失败:", str(e))
         return {"tasks": []}
 
+    #     json_start = content.find("{")
+    #     if json_start == -1:
+    #         print("❌ 未找到 JSON 内容")
+    #         return {"tasks": []}
+        
+    #     json_str = content[json_start:]
+    #     try:
+    #         result = json.loads(json_str)
+    #         if "tasks" not in result:
+    #             print("❌ 返回结果缺少 tasks 字段")
+    #             return {"tasks": []}
+    #         return result
+    #     except json.JSONDecodeError as e:
+    #         print("❌ JSON 解析失败:", str(e))
+    #         return {"tasks": []}
+
+    # except Exception as e:
+    #     print("❌ GPT 调用失败:", str(e))
+    #     return {"tasks": []}
 
 
 
-client = OpenAI(
-    api_key = "",  # or use os.getenv("...")
-    base_url="https://api.deepseek.com/v1"  # Replace with your provider
-)
+
 
 def detect_task_category(task_title: str) -> Optional[str]:
     """

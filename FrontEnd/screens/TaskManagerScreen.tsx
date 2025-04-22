@@ -28,7 +28,7 @@ interface SubTask {
 interface Task {
   id: string;
   text: string;
-  type: '健康' | '家庭' | '心理' | '其他';
+  type: 'Health' | 'Family' | 'Baby' | 'Other';
   done: boolean;
   subTasks: SubTask[];
 }
@@ -117,13 +117,13 @@ export default function TaskManagerScreen() {
         }
       );
       const answer = res.data.choices[0].message.content.trim();
-      if (['健康', '心理', '家庭', '其他'].includes(answer)) {
+      if (['Health', 'Family', 'Baby', 'Other'].includes(answer)) {
         return answer as Task['type'];
       }
     } catch (error) {
       console.error('GPT 分类出错', error);
     }
-    return '其他';
+    return 'Other';
   };
 
   // ================== 添加主任务 ===================
@@ -311,10 +311,10 @@ export default function TaskManagerScreen() {
         <View style={styles.container}>
           {/* 这块如果你需要分类卡片，也可再写renderCategoryCard之类的 */}
           <View style={styles.cardRow}>
-            {renderCategoryCard('健康', '健康', '#E8EAF6')}
-            {renderCategoryCard('家庭', '家庭', '#E0F2F1')}
-            {renderCategoryCard('心理', '心理', '#F3E5F5')}
-            {renderCategoryCard('其他', '其他', '#ECEFF1')}
+            {renderCategoryCard('Health', 'Health', '#E8EAF6')}
+            {renderCategoryCard('Family', 'Family', '#E0F2F1')}
+            {renderCategoryCard('Baby', 'Baby', '#F3E5F5')}
+            {renderCategoryCard('Other', 'Other', '#ECEFF1')}
           </View> 
 
           <FlatList

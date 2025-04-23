@@ -11,11 +11,31 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
-import axios from 'axios';
+import { v4 as uuidv4 } from 'uuid';
+import { getTaskSuggestionsFromBackend } from '../services/hooks/useTaskSuggestion';
 import Swipeable from 'react-native-gesture-handler/Swipeable';
+import axiosInstance from '../utils/axiosInstance';
 
-// 从.env 中读取DeepSeek的KEY
-import { DEEPSEEK_API_KEY } from '@env';
+
+// ✅ 提交任务状态更新 API
+export const updateTaskStatus = async (
+  mainTaskText: string,
+  subTasks: { text: string; done: boolean }[],
+  done: boolean
+) => {
+  try {
+    const res = await axiosInstance.post('/api/task/update', {
+      main_task: mainTaskText,
+      sub_tasks: subTasks,
+      done,
+    });
+    console.log('✅ 状态更新成功:', res.data);
+    return res.data;
+  } catch (err) {
+    console.error('❌ 状态更新失败:', err);
+    throw err;
+  }
+};
 
 // 子任务类型
 interface SubTask {
@@ -33,7 +53,7 @@ interface Task {
   subTasks: SubTask[];
 }
 
-// “建议子任务”的结构（包括是否被选中）
+// "建议子任务"的结构（包括是否被选中）
 interface SuggestedItem {
   text: string;
   selected: boolean;
@@ -42,183 +62,117 @@ interface SuggestedItem {
 export default function TaskManagerScreen() {
   const [taskText, setTaskText] = useState('');
   const [tasks, setTasks] = useState<Task[]>([]);
-
-  // 子任务弹窗相关的状态
   const [isSubTaskModalVisible, setSubTaskModalVisible] = useState(false);
   const [currentTaskId, setCurrentTaskId] = useState<string | null>(null);
-
-  // 用来**手动输入**子任务的输入框
   const [subTaskText, setSubTaskText] = useState('');
+  const [subTaskSuggestions, setSubTaskSuggestions] = useState<SuggestedItem[]>([]);
+  const [confirmClearVisible, setConfirmClearVisible] = useState(false);
 
-  // DeepSeek返回的子任务建议
-  const [subTaskSuggestions, setSubTaskSuggestions] = useState<SuggestedItem[]>(
-    []
-  );
 
-  // ================== 核心：获取 DeepSeek 建议子任务 ===================
-  const getSubTaskSuggestionsFromAI = async (mainTaskText: string) => {
-    try {
-      const prompt = `给我一个与“${mainTaskText}”相关的简短子任务列表，5条即可,每一条控制在4字内。请只返回 JSON 数组格式的纯文本，每一条是一个字符串，如：["子任务1","子任务2","子任务3","子任务4","子任务5"]`;
-      const res = await axios.post(
-        'https://api.deepseek.com/chat/completions',
-        {
-          model: 'deepseek-chat',
-          messages: [
-            {
-              role: 'user',
-              content: prompt,
-            },
-          ],
-          temperature: 0,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${DEEPSEEK_API_KEY}`,
-          },
-        }
-      );
-
-      // res.data.choices[0].message.content 里应当是个 JSON 数组字符串
-      const content = res.data.choices[0].message.content.trim();
-      // 解析JSON
-      const suggestionArray = JSON.parse(content) as string[];
-      // 转换成 { text, selected } 结构
-      const suggestions: SuggestedItem[] = suggestionArray.map((text) => ({
-        text,
-        selected: false,
-      }));
-
-      return suggestions;
-    } catch (error) {
-      console.error('获取子任务建议出错:', error);
-      return [];
-    }
+  const getSuggestionsAndCategory = async (mainTaskText: string) => {
+    const { category, suggestions } = await getTaskSuggestionsFromBackend(mainTaskText);
+    return { category, suggestions };
   };
 
-  // ============== 获取分类(你已有的逻辑，这里放简单示例) ==============
-  const getCategoryFromAI = async (text: string): Promise<Task['type']> => {
-    try {
-      const res = await axios.post(
-        'https://api.deepseek.com/chat/completions',
-        {
-          model: 'deepseek-chat',
-          messages: [
-            {
-              role: 'user',
-              content: `把这个任务分类为「健康」「心理」「家庭」「其他」中的一种：${text}，只返回一个词。`,
-            },
-          ],
-          temperature: 0,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${DEEPSEEK_API_KEY}`,
-          },
-        }
-      );
-      const answer = res.data.choices[0].message.content.trim();
-      if (['Health', 'Family', 'Baby', 'Other'].includes(answer)) {
-        return answer as Task['type'];
-      }
-    } catch (error) {
-      console.error('GPT 分类出错', error);
-    }
-    return 'Other';
-  };
-
-  // ================== 添加主任务 ===================
   const addTask = async () => {
     if (!taskText.trim()) return;
-    const category = await getCategoryFromAI(taskText);
-    const newTask: Task = {
-      id: Date.now().toString(),
-      text: taskText,
-      type: category,
-      done: false,
-      subTasks: [],
-    };
-    setTasks([newTask, ...tasks]);
-    setTaskText('');
+    
+    try {
+      const { category, suggestions } = await getSuggestionsAndCategory(taskText);
+
+      const newTask: Task = {
+        id: Date.now().toString(),
+        text: taskText,
+        type: category,
+        done: false,
+        subTasks: [],
+      };
+
+      setTasks([newTask, ...tasks]);
+      setSubTaskSuggestions(suggestions);
+      setCurrentTaskId(newTask.id);
+      setSubTaskModalVisible(true);
+      setTaskText('');
+    } catch (error) {
+      console.error('添加任务失败:', error);
+      // 即使获取建议失败，也添加任务
+      const newTask: Task = {
+        id: Date.now().toString(),
+        text: taskText,
+        type: 'Other',
+        done: false,
+        subTasks: [],
+      };
+      setTasks([newTask, ...tasks]);
+      setTaskText('');
+    }
   };
 
-  // ================== 左滑删除主任务(省略Swipeable细节) ===================
   const deleteTask = (id: string) => {
     setTasks((prev) => prev.filter((t) => t.id !== id));
   };
 
-  // ================== 打开“添加子任务”弹窗 ===================
-  const openSubTaskModal = async (taskId: string) => {
+  const openSubTaskModal = (taskId: string) => {
     setCurrentTaskId(taskId);
     setSubTaskText('');
-
-    // 根据主任务文本获取子任务建议
-    const theTask = tasks.find((t) => t.id === taskId);
-    if (!theTask) {
-      setSubTaskSuggestions([]);
-      setSubTaskModalVisible(true);
-      return;
-    }
-    const suggestions = await getSubTaskSuggestionsFromAI(theTask.text);
-    setSubTaskSuggestions(suggestions);
     setSubTaskModalVisible(true);
   };
 
-  // =========== 在弹窗里，点击气泡 => toggle选中状态 ===========
   const toggleSuggestionSelected = (index: number) => {
     setSubTaskSuggestions((prev) =>
-      prev.map((item, i) =>
-        i === index ? { ...item, selected: !item.selected } : item
-      )
+      prev.map((item, i) => (i === index ? { ...item, selected: !item.selected } : item))
     );
   };
 
-  // =========== 确认添加子任务 ===========
-  const addSubTask = () => {
-    if (!currentTaskId) return;
-
-    // 1) 用户可能手动输入了1条子任务
-    const newSubTasks: SubTask[] = [];
-    if (subTaskText.trim()) {
-      newSubTasks.push({
-        id: Date.now().toString(),
-        text: subTaskText.trim(),
-        done: false,
+  const submitTaskToBackend = async (task: Task) => {
+    try {
+      await axiosInstance.post('/api/task/save', {
+        main_task: task.text,
+        sub_tasks: task.subTasks.map((sub) => ({ text: sub.text })),
       });
+      console.log('✅ 已成功保存任务与子任务');
+    } catch (err) {
+      console.error('❌ 保存任务失败:', err);
+    }
+  };
+
+  const addSubTask = async () => {
+    if (!currentTaskId) return;
+    const newSubTasks: SubTask[] = [];
+
+    if (subTaskText.trim()) {
+      newSubTasks.push({ id: uuidv4(), text: subTaskText.trim(), done: false });
     }
 
-    // 2) 用户在建议列表里选了的子任务
     const selectedSuggestions = subTaskSuggestions.filter((s) => s.selected);
     selectedSuggestions.forEach((sug) => {
-      newSubTasks.push({
-        id: Date.now().toString(),
-        text: sug.text,
-        done: false,
-      });
+      newSubTasks.push({ id: uuidv4(), text: sug.text, done: false });
     });
 
-    // 3) 将这些新子任务更新到对应的主任务里
+    const updatedTasks = tasks.map((task) =>
+      task.id === currentTaskId
+        ? { ...task, subTasks: [...task.subTasks, ...newSubTasks] }
+        : task
+    );
+    setTasks(updatedTasks);
+    setSubTaskModalVisible(false);
+
+    const currentTask = updatedTasks.find((t) => t.id === currentTaskId);
+    if (currentTask) {
+      await submitTaskToBackend(currentTask);
+    }
+  };
+
+  const toggleDone = (id: string) => {
     setTasks((prev) =>
       prev.map((task) => {
-        if (task.id === currentTaskId) {
-          return {
-            ...task,
-            subTasks: [...task.subTasks, ...newSubTasks],
-          };
+        if (task.id === id) {
+          const updated = { ...task, done: !task.done };
+          updateTaskStatus(updated.text, updated.subTasks, updated.done);
+          return updated;
         }
         return task;
       })
-    );
-
-    // 4) 关闭弹窗
-    setSubTaskModalVisible(false);
-  };
-
-  // ================== 主任务和子任务的展示逻辑 ===================
-  const toggleDone = (id: string) => {
-    setTasks((prev) =>
-      prev.map((task) =>
-        task.id === id ? { ...task, done: !task.done } : task
-      )
     );
   };
 
@@ -226,18 +180,28 @@ export default function TaskManagerScreen() {
     setTasks((prev) =>
       prev.map((task) => {
         if (task.id === taskId) {
-          return {
-            ...task,
-            subTasks: task.subTasks.map((st) =>
-              st.id === subTaskId ? { ...st, done: !st.done } : st
-            ),
-          };
+          const updatedSubs = task.subTasks.map((st) =>
+            st.id === subTaskId ? { ...st, done: !st.done } : st
+          );
+          updateTaskStatus(task.text, updatedSubs, task.done); // ✅ 自动触发更新
+          return { ...task, subTasks: updatedSubs };
         }
         return task;
       })
     );
   };
 
+  // 清除任务
+  const clearCompletedTasks = () => {
+    const filtered = tasks
+      .filter((task) => !task.done)
+      .map((task) => ({
+        ...task,
+        subTasks: task.subTasks.filter((sub) => !sub.done),
+      }));
+    setTasks(filtered);
+  };
+  
   // 左滑时显示的删除按钮(示例)
   const renderRightActions = (id: string) => {
     return (
@@ -307,14 +271,16 @@ export default function TaskManagerScreen() {
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}
       >
         <View style={styles.container}>
+
           {/* 这块如果你需要分类卡片，也可再写renderCategoryCard之类的 */}
           <View style={styles.cardRow}>
-            {renderCategoryCard('Health', 'Health', '#E8EAF6')}
-            {renderCategoryCard('Family', 'Family', '#E0F2F1')}
-            {renderCategoryCard('Baby', 'Baby', '#F3E5F5')}
-            {renderCategoryCard('Other', 'Other', '#ECEFF1')}
+            {renderCategoryCard('健康', 'Health', '#E8EAF6')}
+            {renderCategoryCard('家庭', 'Family', '#E0F2F1')}
+            {renderCategoryCard('心理', 'Baby', '#F3E5F5')}
+            {renderCategoryCard('其他', 'Other', '#ECEFF1')}
           </View> 
 
           <FlatList
@@ -323,6 +289,42 @@ export default function TaskManagerScreen() {
             keyExtractor={(item) => item.id}
             contentContainerStyle={{ paddingBottom: 20 }}
           />
+
+          <TouchableOpacity style={styles.fabButton} onPress={() => setConfirmClearVisible(true)}>
+            <Text style={styles.fabText}>-</Text>
+          </TouchableOpacity>
+
+          <Modal
+            visible={confirmClearVisible}
+            transparent
+            animationType="fade"
+            onRequestClose={() => setConfirmClearVisible(false)}
+          >
+            <View style={styles.modalBackground}>
+              <View style={styles.modalContainer}>
+                <Text style={styles.modalTitle}>确认清除</Text>
+                <Text style={{ marginBottom: 16 }}>确定要删除所有已完成任务吗？此操作不可撤销。</Text>
+
+                <View style={styles.modalButtonRow}>
+                  <TouchableOpacity
+                    style={[styles.modalButton, { backgroundColor: '#ccc' }]}
+                    onPress={() => setConfirmClearVisible(false)}
+                  >
+                    <Text style={styles.modalButtonText}>取消</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.modalButton, { backgroundColor: '#F44336' }]}
+                    onPress={() => {
+                      clearCompletedTasks();
+                      setConfirmClearVisible(false);
+                    }}
+                  >
+                    <Text style={styles.modalButtonText}>确认</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </View>
+          </Modal>
 
           {/* 底部输入栏：添加主任务 */}
           <View style={styles.inputRow}>
@@ -405,6 +407,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     paddingHorizontal: 20,
+    paddingBottom: 20,
   },
   title: {
     fontSize: 22,
@@ -412,6 +415,31 @@ const styles = StyleSheet.create({
     marginVertical: 16,
     textAlign: 'center',
   },
+
+  fabButton: {
+    position: 'absolute',
+    bottom: 100,
+    alignSelf: 'center',
+    backgroundColor: '#bfb2d4',
+    borderRadius: 30,
+    width: 56,
+    height: 56,
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+  },
+  fabText: {
+    fontSize: 20,
+    color: '#7C3AED',
+  },
+
   // ============ 主任务部分 ============
   taskItem: {
     marginBottom: 10,
@@ -425,6 +453,7 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     justifyContent: 'space-between',
     marginBottom: 20,
+    marginTop: 20,
   },
   card: {
     width: '48%',
@@ -510,6 +539,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 16,
+    paddingBottom: 20,
   },
   input: {
     flex: 1,

@@ -18,8 +18,31 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useApiRequest } from '../services/hooks/useAPIRequest';
 import { usePostRequest } from '../services/hooks/usePostRequest';
 import { validateFormData } from '../utils/validateForms';
-import { formDataToPayload } from '../utils/formPayload';
 import { BabyInfo, mapBabyProfileToBabyInfo } from '../src/mappers'; // Import mapper and BabyInfo type
+import { setHealthCache } from '../utils/healthCache';
+import { momApi } from '../src/api';
+import { babyApi } from '../src/api';
+
+export const initHealthCache = async () => {
+  try {
+    const babyId = await AsyncStorage.getItem('baby_id');
+    if (!babyId) throw new Error('No baby_id found');
+
+    const momHealth = await momApi.getTodayHealth();
+    if (momHealth.success) {
+      await setHealthCache('mom_health', momHealth.data); // ✅ 使用 setDailyCache
+    }
+
+    const babyHealth = await babyApi.getRawDailyData(babyId);
+    if (babyHealth.success) {
+      await setHealthCache('baby_health', babyHealth.summary); // ✅ 使用 setDailyCache
+    }
+
+    console.log('✅ 健康数据缓存完成');
+  } catch (error) {
+    console.error('❌ 健康数据缓存失败:', error);
+  }
+};
 
 type RootParamList = {
   MainTabs: undefined;
@@ -93,6 +116,9 @@ const DashboardScreen = () => {
       // Placeholder for future feature loading
     }, [])
   );
+  useEffect(() => {
+    initHealthCache();
+  }, []);
 
   // 提交记录
   const submitDataRecordCallback = useCallback(async () => {

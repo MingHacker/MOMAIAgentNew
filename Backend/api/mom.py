@@ -109,10 +109,36 @@ def get_today_mom_summary(user_id: str = Depends(get_current_user)):
 @router.get("/api/mom/health/daily", status_code=status.HTTP_200_OK)
 def get_mom_health_daily(user_id: str = Depends(get_current_user)):
     try:
-        analysis: Dict[str, Any] = get_mom_health_today(user_id, supabase)
-        return {"success": True, "summary": analysis}
+        print(f"👩 正在获取 mom health，用户 ID: {user_id}")
+        result = get_mom_health_today(user_id, supabase)
+        print("🧠 get_mom_health_today 返回：", result)
+
+        if not result or not isinstance(result, dict):
+            return JSONResponse(status_code=500, content={
+                "success": False,
+                "summary": "get_mom_health_today 返回异常"
+            })
+
+        if not result.get("success"):
+            return JSONResponse(status_code=500, content={
+                "success": False,
+                "summary": result.get("message", "Unknown error")
+            })
+
+        if not result.get("data"):
+            print("⚠️ 没有健康数据，返回 null")
+            return {"success": True, "data": None}
+
+        print("✅ 成功返回数据")
+        return {
+            "success": True,
+            "data": result["data"]
+        }
+
     except Exception as e:
+        print(f"❌ get_mom_health_daily 发生错误：{str(e)}")
         return JSONResponse(status_code=500, content={"success": False, "summary": str(e)})
+
     
 # ✅ 3. 每周健康趋势图表
 @router.get("/api/mom/health/weekly", status_code=status.HTTP_200_OK)
@@ -129,6 +155,9 @@ def get_mom_weekly_health(user_id: str = Depends(get_current_user)):
             .gte("record_date", start_date.isoformat())
             .execute()
         )
+
+        if not health_result or not health_result.data:
+            return {"success": True, "data": None}
 
         daily_summary = {}
         for row in health_result.data:

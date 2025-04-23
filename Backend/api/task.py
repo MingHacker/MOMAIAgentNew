@@ -37,6 +37,22 @@ class GPTTaskResponse(BaseModel):
     category: str
     output: List[SimpleTaskModel]
 
+class SubTask(BaseModel):
+    text: str
+
+class SaveTaskRequest(BaseModel):
+    main_task: str
+    sub_tasks: List[SubTask]
+
+class SubTaskUpdate(BaseModel):
+    text: str
+    done: bool
+
+class TaskUpdateRequest(BaseModel):
+    main_task: str
+    sub_tasks: List[SubTaskUpdate]
+    done: bool
+
 async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
     try:
         token = credentials.credentials
@@ -79,3 +95,24 @@ async def create_task_from_gpt(req: GPTTaskRequest = Body(...), user_id: str = D
         category=category,
         output=simple_tasks
     )
+
+@router.post("/api/task/save")
+def save_task(request: SaveTaskRequest):
+    print("✅ 收到主任务：", request.main_task)
+    print("✅ 收到子任务列表：", [t.text for t in request.sub_tasks])
+    return {"success": True, "message": "已收到任务内容"}
+
+@router.post("/api/task/update")
+async def update_task_status(req: TaskUpdateRequest = Body(...)):
+    """
+    接收任务状态更新请求
+    """
+    print("✅ 接收到主任务更新:")
+    print("主任务:", req.main_task)
+    print("主任务是否完成:", req.done)
+    print("子任务:")
+    for sub in req.sub_tasks:
+        print(f" - {sub.text} ✅ {'完成' if sub.done else '未完成'}")
+
+    # 可后续加入数据库更新逻辑
+    return {"success": True, "message": "任务状态已接收"}

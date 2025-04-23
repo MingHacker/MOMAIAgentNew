@@ -20,64 +20,84 @@ def get_mom_health_today(user_id: str, supabase: Client) -> Dict[str, Any]:
         "data": {...} or None
     }
     """
-    today_str = date.today().isoformat()
-    print(f"查询用户 {user_id} 的健康数据，日期：{today_str}")
+    try:
+        today_str = date.today().isoformat()
+        print(f"查询用户 {user_id} 的健康数据，日期：{today_str}")
 
-    # 1. 获取 mom_id
-    mom_result = supabase.table("mom_profiles") \
-        .select("id") \
-        .eq("id", user_id) \
-        .single() \
-        .execute()
+        # 1. 获取 mom_id
+        mom_result = supabase.table("mom_profiles") \
+            .select("id") \
+            .eq("id", user_id) \
+            .single() \
+            .execute()
 
-    print(f"mom_profiles 查询结果：{mom_result.data}")
+        print(f"mom_profiles 查询结果：{mom_result.data}")
 
-    if not mom_result.data:
+        if not mom_result.data:
+            return {
+                "success": False,
+                "message": "No mom profile found for this user",
+                "data": None
+            }
+
+        mom_id = mom_result.data["id"]
+        print(f"找到 mom_id: {mom_id}")
+
+        # 2. 查询今天的健康记录
+        health_result = supabase.table("mom_health") \
+            .select("*") \
+            .eq("mom_id", mom_id) \
+            .eq("record_date", today_str) \
+            .maybe_single() \
+            .execute()
+
+        print(f"mom_health 查询结果：{health_result}")
+        
+        # 检查 health_result 是否为 None
+        if health_result is None:
+            print("⚠️ mom_health 查询返回 None")
+            return {
+                "success": True,
+                "message": "No health record found for today",
+                "data": None
+            }
+
+        # 检查 health_result.data 是否存在
+        if not hasattr(health_result, 'data'):
+            print("⚠️ health_result 没有 data 属性")
+            return {
+                "success": True,
+                "message": "No health record found for today",
+                "data": None
+            }
+
+        print(f"mom_health 数据：{health_result.data}")
+
+        # 3. 返回统一格式
+        result = {
+            "success": True,
+            "message": "Health data loaded successfully",
+            "data": {
+                "hrv": health_result.data.get("hrv", 0),
+                "sleep_hours": health_result.data.get("sleep_hours", 0),
+                "steps": health_result.data.get("steps", 0),
+                "mood": health_result.data.get("mood", "normal"),
+                "stress_level": health_result.data.get("stress_level", "normal"),
+                "calories_burned": health_result.data.get("calories_burned", 0),
+                "resting_heart_rate": health_result.data.get("resting_heart_rate", 0),
+                "breathing_rate": health_result.data.get("breathing_rate", 0)
+            }
+        }
+        print(f"返回的健康数据：{result}")
+        return result
+
+    except Exception as e:
+        print(f"获取健康数据时发生错误：{str(e)}")
         return {
             "success": False,
-            "message": "No mom profile found for this user",
+            "message": f"Error fetching health data: {str(e)}",
             "data": None
         }
-
-    mom_id = mom_result.data["id"]
-    print(f"找到 mom_id: {mom_id}")
-
-    # 2. 查询今天的健康记录
-    health_result = supabase.table("mom_health") \
-        .select("*") \
-        .eq("mom_id", mom_id) \
-        .eq("record_date", today_str) \
-        .single() \
-        .execute()
-
-    print(f"mom_health 查询结果：{health_result.data}")
-
-    if not health_result.data:
-        return {
-            "success": False,
-            "message": "No health record found for today",
-            "data": None
-        }
-
-    health = health_result.data
-
-    # 3. 返回统一格式
-    result = {
-        "success": True,
-        "message": "Health data loaded successfully",
-        "data": {
-            "hrv": health.get("hrv"),
-            "sleep_hours": health.get("sleep_hours"),
-            "steps": health.get("steps"),
-            "mood": health.get("mood"),
-            "stress_level": health.get("stress_level"),
-            "calories_burned": health.get("calories_burned"),
-            "resting_heart_rate": health.get("resting_heart_rate"),
-            "breathing_rate": health.get("breathing_rate")
-        }
-    }
-    print(f"返回的健康数据：{result}")
-    return result
 
 
 

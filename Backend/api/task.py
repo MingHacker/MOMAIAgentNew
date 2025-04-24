@@ -11,7 +11,8 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from core.supabase import get_supabase
 # 直接引入 graph 和输入定义
 from agents.task_manager import run_task_manager
-
+from agents.llm import detect_task_category
+from datetime import datetime, timezone
 
 load_dotenv()
 supabase = get_supabase()
@@ -26,6 +27,8 @@ class GPTTaskRequest(BaseModel):
     input_text: str
     mom_health_status : Dict[str, Any] = Field(default_factory=dict)
     baby_health_status: Dict[str, Any] = Field(default_factory=dict)
+
+
 
 # 简化任务输出模型
 class SimpleTaskModel(BaseModel):
@@ -97,10 +100,38 @@ async def create_task_from_gpt(req: GPTTaskRequest = Body(...), user_id: str = D
     )
 
 @router.post("/api/task/save")
-def save_task(request: SaveTaskRequest):
-    print("✅ 收到主任务：", request.main_task)
-    print("✅ 收到子任务列表：", [t.text for t in request.sub_tasks])
-    return {"success": True, "message": "已收到任务内容"}
+def save_task(request: SaveTaskRequest, user_id: str = Depends(get_current_user)):
+    now = datetime.now(timezone.utc).isoformat()
+    category = detect_task_category(request.main_task)
+
+        # 👉 Insert main task and get generated task_id
+    main_insert = supabase.client.table("tasks").insert({
+        "mom_id": user_id,
+        "title": request.main_task,
+        "status": "pending",
+        "priority": "medium",
+        "category": category,
+        "created_at": now
+    }).execute()
+
+    main_task_id = main_insert.data[0]["task_id"]
+
+        # 👉 Insert sub-tasks
+    # 👇 Collect all subtask payloads
+    subtask_payloads = [{
+        "mom_id": user_id,
+        "title": sub.text,
+        "status": "pending",
+        "priority": "medium",
+        "created_at": now,
+        "parent_id": main_task_id
+    } for sub in request.sub_tasks]
+
+    # ✅ Batch insert in one request
+    if subtask_payloads:
+        subInserts = supabase.client.table("tasks").insert(subtask_payloads).execute()
+
+    return {"success": True, "mainTask": main_insert, "subTasks": subInserts}
 
 @router.post("/api/task/update")
 async def update_task_status(req: TaskUpdateRequest = Body(...)):

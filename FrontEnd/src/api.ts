@@ -320,7 +320,7 @@ export const api = {
       if (!response.data) {
         return [];
       }
-      console.log('chat history from api ts:', response.data);
+      // console.log('chat history from api ts:', response.data);
       return response.data;
       
     } catch (error) {

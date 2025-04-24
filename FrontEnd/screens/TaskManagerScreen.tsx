@@ -126,11 +126,12 @@ export default function TaskManagerScreen() {
 
   const submitTaskToBackend = async (task: Task) => {
     try {
-      await axiosInstance.post('/api/task/save', {
+      const result = await axiosInstance.post('/api/task/save', {
         main_task: task.text,
         sub_tasks: task.subTasks.map((sub) => ({ text: sub.text })),
       });
       console.log('✅ 已成功保存任务与子任务');
+      console.log(result)
     } catch (err) {
       console.error('❌ 保存任务失败:', err);
     }

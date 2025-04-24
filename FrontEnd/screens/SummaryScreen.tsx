@@ -73,7 +73,6 @@ export default function HealthSummaryScreen() {
       </SafeAreaView>
     );
   }
-  console.log(babyData,momData);
   // 图表配置
   const chartConfig = {
     backgroundGradientFrom: '#fff',

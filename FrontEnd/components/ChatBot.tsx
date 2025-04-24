@@ -118,7 +118,7 @@ const ChatBot = () => {
           const raw = msg.timestamp;
           const isValid = raw && dayjs(raw).isValid();
   
-          console.log('🕒 Incoming timestamp:', raw, '| Valid:', isValid);
+          // console.log('🕒 Incoming timestamp:', raw, '| Valid:', isValid);
   
           const timestamp = isValid
             ? dayjs(raw).format('HH:mm')
@@ -131,7 +131,7 @@ const ChatBot = () => {
             timestamp,
           };
         });
-        console.log('🐣 Chat history raw response:', history);
+        // console.log('🐣 Chat history raw response:', history);
         setMessages(formattedMessages.reverse());
       }
     } catch (error) {

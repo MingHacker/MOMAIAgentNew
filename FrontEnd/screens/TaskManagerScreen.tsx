@@ -17,17 +17,34 @@ import Swipeable from 'react-native-gesture-handler/Swipeable';
 import axiosInstance from '../utils/axiosInstance';
 
 
+// 子任务类型
+interface TaskUpdate {
+  id: string;
+  done: Boolean;
+}
+
 // ✅ 提交任务状态更新 API
 export const updateTaskStatus = async (
-  mainTaskText: string,
-  subTasks: { text: string; done: boolean }[],
+  mainTaskId: string,
+  subTasks: TaskUpdate[],
   done: boolean
 ) => {
   try {
+    const mainTaskUpdate: TaskUpdate = {
+      id: mainTaskId,
+      done: done
+    }
+
+    // const subs: TaskUpdate[] = []
+
+    // for(const sub of subTasks)
+    // {
+    //   subs.push({id: sub.id, done: sub.done})
+    // }
+
     const res = await axiosInstance.post('/api/task/update', {
-      main_task: mainTaskText,
+      main_task: mainTaskUpdate,
       sub_tasks: subTasks,
-      done,
     });
     console.log('✅ 状态更新成功:', res.data);
     return res.data;
@@ -81,7 +98,7 @@ export default function TaskManagerScreen() {
       const { category, suggestions } = await getSuggestionsAndCategory(taskText);
 
       const newTask: Task = {
-        id: Date.now().toString(),
+        id: uuidv4(),
         text: taskText,
         type: category,
         done: false,
@@ -97,7 +114,7 @@ export default function TaskManagerScreen() {
       console.error('添加任务失败:', error);
       // 即使获取建议失败，也添加任务
       const newTask: Task = {
-        id: Date.now().toString(),
+        id: uuidv4(),
         text: taskText,
         type: 'Other',
         done: false,
@@ -127,8 +144,8 @@ export default function TaskManagerScreen() {
   const submitTaskToBackend = async (task: Task) => {
     try {
       const result = await axiosInstance.post('/api/task/save', {
-        main_task: task.text,
-        sub_tasks: task.subTasks.map((sub) => ({ text: sub.text })),
+        main_task: task,
+        sub_tasks: task.subTasks,
       });
       console.log('✅ 已成功保存任务与子任务');
       console.log(result)
@@ -169,7 +186,7 @@ export default function TaskManagerScreen() {
       prev.map((task) => {
         if (task.id === id) {
           const updated = { ...task, done: !task.done };
-          updateTaskStatus(updated.text, updated.subTasks, updated.done);
+          updateTaskStatus(updated.id, updated.subTasks, updated.done);
           return updated;
         }
         return task;

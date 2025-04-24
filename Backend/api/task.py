@@ -40,21 +40,21 @@ class GPTTaskResponse(BaseModel):
     category: str
     output: List[SimpleTaskModel]
 
-class SubTask(BaseModel):
+class TaskModel(BaseModel):
+    id: str
     text: str
 
 class SaveTaskRequest(BaseModel):
-    main_task: str
-    sub_tasks: List[SubTask]
+    main_task: TaskModel
+    sub_tasks: List[TaskModel]
 
-class SubTaskUpdate(BaseModel):
-    text: str
+class TaskUpdate(BaseModel):
+    id: str
     done: bool
 
 class TaskUpdateRequest(BaseModel):
-    main_task: str
-    sub_tasks: List[SubTaskUpdate]
-    done: bool
+    main_task: TaskUpdate
+    sub_tasks: List[TaskUpdate]
 
 async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
     try:
@@ -102,12 +102,13 @@ async def create_task_from_gpt(req: GPTTaskRequest = Body(...), user_id: str = D
 @router.post("/api/task/save")
 def save_task(request: SaveTaskRequest, user_id: str = Depends(get_current_user)):
     now = datetime.now(timezone.utc).isoformat()
-    category = detect_task_category(request.main_task)
+    category = detect_task_category(request.main_task.text)
 
         # 👉 Insert main task and get generated task_id
     main_insert = supabase.client.table("tasks").insert({
+        "task_id": request.main_task.id,
         "mom_id": user_id,
-        "title": request.main_task,
+        "title": request.main_task.text,
         "status": "pending",
         "priority": "medium",
         "category": category,
@@ -119,6 +120,7 @@ def save_task(request: SaveTaskRequest, user_id: str = Depends(get_current_user)
         # 👉 Insert sub-tasks
     # 👇 Collect all subtask payloads
     subtask_payloads = [{
+        "task_id": sub.id,
         "mom_id": user_id,
         "title": sub.text,
         "status": "pending",
@@ -131,19 +133,22 @@ def save_task(request: SaveTaskRequest, user_id: str = Depends(get_current_user)
     if subtask_payloads:
         subInserts = supabase.client.table("tasks").insert(subtask_payloads).execute()
 
-    return {"success": True, "mainTask": main_insert, "subTasks": subInserts}
+    return {"success": True}
 
 @router.post("/api/task/update")
-async def update_task_status(req: TaskUpdateRequest = Body(...)):
-    """
-    接收任务状态更新请求
-    """
-    print("✅ 接收到主任务更新:")
-    print("主任务:", req.main_task)
-    print("主任务是否完成:", req.done)
-    print("子任务:")
-    for sub in req.sub_tasks:
-        print(f" - {sub.text} ✅ {'完成' if sub.done else '未完成'}")
+async def update_task_status_api(req: TaskUpdateRequest = Body(...)):
+    try:
+        update_task_status(req.main_task)
+        for sub in req.sub_tasks:
+            update_task_status(sub)
+        return {"success": True, "message": "All tasks updated successfully"}
+    except Exception as e:
+        return {"success": False, "message": str(e)}
 
-    # 可后续加入数据库更新逻辑
-    return {"success": True, "message": "任务状态已接收"}
+def update_task_status(task):
+    status = "completed" if task.done else "pending"
+    update_data = {"status": status}
+    if status == "completed":
+        update_data["complete_date"] = datetime.utcnow().isoformat()
+
+    return supabase.client.table("tasks").update(update_data).eq("task_id", task.id).execute()

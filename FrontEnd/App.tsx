@@ -24,6 +24,7 @@ import WelcomeScreen from './screens/WelcomeScreen';
 import EntryScreen from './screens/EntryScreen';
 import BabyProfileScreen from './screens/BabyProfileScreen';
 import RecommendedFeaturesScreen from './screens/RecommandFeatureScreen';
+import TimelineScreen from './screens/TimelineScreen';
 
 type AuthContextType = {
   isAuthenticated: boolean;
@@ -177,7 +178,19 @@ function DrawerNavigator() {
             <Ionicons name={focused ? 'person' : 'person-outline'} size={24} color={color} />
           )
         }} 
+        
       />
+      <Drawer.Screen 
+        name="Timeline" 
+        component={TimelineScreen} 
+        options={{ 
+          title: 'Timeline',
+          drawerIcon: ({ focused, color, size }) => (
+            <Ionicons name={focused ? 'calendar' : 'calendar-outline'} size={24} color={color} />
+          )
+        }} 
+      />
+      
       <Drawer.Screen 
         name="RecommendedFeatures" 
         component={RecommendedFeaturesScreen} 

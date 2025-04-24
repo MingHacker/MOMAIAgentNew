@@ -1,4 +1,3 @@
-
 -- Enable UUID generation extension
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
@@ -54,4 +53,18 @@ CREATE TABLE IF NOT EXISTS events_history (
     event_data JSONB,
     occurred_at TIMESTAMPTZ DEFAULT NOW(),
     created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Table: timeline
+CREATE TABLE IF NOT EXISTS timeline (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    baby_id UUID REFERENCES baby_profiles(id) ON DELETE CASCADE,
+    user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+    date DATE NOT NULL,
+    title TEXT NOT NULL,
+    emoji TEXT,
+    description TEXT,
+    image_url TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
 );

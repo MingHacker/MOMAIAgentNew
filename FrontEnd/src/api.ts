@@ -559,4 +559,49 @@ const emotionApi = {
   }
 };
 
-// --- Task Endpoints ---
+// --- Timeline Endpoints ---
+
+export interface TimelineItem {
+  id: string;
+  baby_id: string;
+  user_id: string;
+  date: string;
+  title: string;
+  emoji?: string;
+  description?: string;
+  image_url?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export const timelineApi = {
+  getTimeline: async (babyId: string): Promise<TimelineItem[]> => {
+    try {
+      const response = await axiosInstance.get(`/api/timeline`, {
+        params: { baby_id: babyId }
+      });
+      return response.data;
+    } catch (error) {
+      console.error('获取时间线失败:', error);
+      return [];
+    }
+  },
+
+  addTimeline: async (data: {
+    baby_id: string;
+    user_id: string;
+    date: string;
+    title: string;
+    emoji?: string;
+    description?: string;
+    image_url?: string;
+  }): Promise<boolean> => {
+    try {
+      const response = await axiosInstance.post('/api/timeline', data);
+      return response.data.success;
+    } catch (error) {
+      console.error('添加时间线失败:', error);
+      return false;
+    }
+  }
+};

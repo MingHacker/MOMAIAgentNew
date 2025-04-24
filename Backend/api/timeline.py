@@ -3,7 +3,7 @@
 from fastapi import APIRouter, HTTPException, Query, Body, status, Depends
 from typing import List, Optional
 from pydantic import BaseModel
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from core.supabase import get_supabase, SupabaseService
 from uuid import uuid4
@@ -31,6 +31,13 @@ class TimelineItem(BaseModel):
     description: Optional[str] = ""
     image_url: Optional[str] = ""
 
+    def model_dump(self, **kwargs):
+        data = super().model_dump(**kwargs)
+        # 将date对象转换为ISO格式字符串
+        if isinstance(data.get('date'), date):
+            data['date'] = data['date'].isoformat()
+        return data
+
 
 @router.get("/api/timeline", status_code=200)
 def get_timeline(baby_id: str = Query(...), supabase: SupabaseService = Depends(get_supabase)):
@@ -51,7 +58,7 @@ def add_timeline(item: TimelineItem, supabase: SupabaseService = Depends(get_sup
         payload = item.model_dump()
         payload = {k: v for k, v in payload.items() if v not in ["", None]}
         payload["id"] = str(uuid4())
-        payload["created_at"] = datetime.now(datetime.timezone.utc).isoformat()
+        payload["created_at"] = datetime.now(timezone.utc).isoformat()
 
         # ✅ 如果 date 是 None，就自动填入今天
         if not payload.get("date"):

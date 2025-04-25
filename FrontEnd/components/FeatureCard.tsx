@@ -8,7 +8,7 @@ dayjs.extend(relativeTime);
 type FeatureCardProps = {
   featureId: string | { id: string; title?: string };
   reminderTime?: string;
-  reminderType?: 'feeding' | 'diaper' | 'sleep';
+  reminderType?: 'feeding' | 'diaper' | 'sleep' | 'outside';
   dailySummary?: string;
 };
 
@@ -22,7 +22,7 @@ const FeatureCard = ({ featureId, reminderTime, reminderType, dailySummary }: Fe
     displayText = featureId.title || featureId.id;
   }
 
-  if (reminderTime) {
+  if (reminderTime && reminderType !== 'outside') {
     const reminderDateTime = dayjs(reminderTime);
     timeDiffText = reminderDateTime.fromNow();
   }
@@ -36,6 +36,11 @@ const FeatureCard = ({ featureId, reminderTime, reminderType, dailySummary }: Fe
           {reminderType === 'sleep' && (
             <Text style={styles.summaryText}>
               Slept: {JSON.parse(dailySummary).totalmins} mins
+            </Text>
+          )}
+          {reminderType === 'outside' && (
+            <Text style={styles.summaryText}>
+              Outside: {JSON.parse(dailySummary).totalmins} mins
             </Text>
           )}
           {reminderType === 'diaper' && (

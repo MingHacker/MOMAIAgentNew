@@ -287,6 +287,15 @@ def calculate_daily_summary(reminder, baby_id):
                 except (KeyError, ValueError):
                     pass
             summary = {"totalmins": total_mins}
+        elif reminder['reminder_type'] == 'outside':
+            outside_logs = [log for log in logs if log['log_type'] == 'outside']
+            total_mins = 0
+            for log in outside_logs:
+                try:
+                    total_mins += int(log['log_data'].get('outsideDuration', 0))  # Assuming timeSpent is in minutes
+                except (KeyError, ValueError):
+                    pass
+            summary = {"totalmins": total_mins}
             
         elif reminder['reminder_type'] == 'diaper':
             diaper_logs = [log for log in logs if log['log_type'] == 'diaper']
@@ -321,7 +330,10 @@ async def get_reminders(
         result = query.order("reminder_time").execute()
         reminders = result.data
         reminders = get_latest_reminders(reminders)  # Get the latest reminders for each type
+        reminders.sort(key=lambda x: x['reminder_time'])  # Sort by reminder_time
+        reminders.append({'id': 'dummy', 'baby_id': baby_id, 'reminder_type': 'outside', 'reminder_time': '2025-04-25T03:47:30.785+00:00', 'is_completed': False, 'notes': 'Based on last diaper at 01:47', 'created_at': '2025-04-25T01:47:39.547943+00:00'})
         # Add daily summary statistics
+        
         for reminder in reminders:
             reminder['daily_summary'] = calculate_daily_summary(reminder, baby_id)
 
@@ -381,9 +393,9 @@ async def complete_reminder_by_log(reminderbylog:CompleteReminderByLog, user_id:
         result = supabase.table("reminders").update({"is_completed": True}).eq("id", reminder_id).execute()
 
         # generate reminders for the baby
-        generate_reminders_for_baby(reminderbylog.baby_id)
+        await generate_reminders_for_baby(reminderbylog.baby_id)
 
-        if result.data:
+        if result:
             return {"message": f"Reminder with id {reminder_id} completed successfully."}
         else:
             return {"message": "Reminder status updated or was already complete."}
@@ -412,11 +424,11 @@ async def generate_reminders_for_baby(baby_id: str):
     """
     try:
         print(f"Processing reminders for baby: {baby_id}")
-        agent.generate_reminders_from_baby_logs(baby_id, datetime.now(timezone.utc))
-        return True
+        result = agent.generate_reminders_from_baby_logs(baby_id, datetime.now(timezone.utc))
+        return result
     except Exception as e:
         print(f"Error processing reminders for baby {baby_id}: {e}")
-        return False
+        return None
 
 async def run_reminder_generation_for_all_babies():
     """
@@ -436,8 +448,8 @@ async def run_reminder_generation_for_all_babies():
         processed_count = 0
         error_count = 0
         for baby_id in all_baby_ids:
-            success = await generate_reminders_for_baby(baby_id)
-            if success:
+            result = await generate_reminders_for_baby(baby_id)
+            if result is not None:
                 processed_count += 1
             else:
                 error_count += 1

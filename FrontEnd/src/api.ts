@@ -49,7 +49,7 @@ export interface BabyProfile extends BabyProfileCreate { // Added export
   user_id: string;
 }
 
-type LogType = 'feeding' | 'diaper' | 'sleep' | 'cry' | 'bowel';
+type LogType = 'feeding' | 'diaper' | 'sleep' | 'outside';
 
 interface BabyLogCreate {
   baby_id: string;
@@ -62,12 +62,13 @@ interface BabyLog extends BabyLogCreate {
   id: string;
 }
 
-type ReminderType = 'feeding' | 'diaper' | 'sleep';
+type ReminderType = 'feeding' | 'diaper' | 'sleep' | 'outside';
 
 interface ReminderCreate {
   baby_id: string;
   reminder_type: ReminderType;
   reminder_time: string; // ISO format
+  daily_summary: string;
   notes?: string;
 }
 

@@ -86,9 +86,9 @@ class BabyAIAgent:
 
         # Define typical intervals (these should ideally be configurable per baby)
         intervals = {
-            "feeding": timedelta(hours=3),
+            "feeding": timedelta(hours=2),
             "diaper": timedelta(hours=2),
-            "sleep": timedelta(hours=8) # Time since last *waking up*
+            "sleep": timedelta(hours=2) # Time since last *waking up*
         }
 
         # Generate reminders if interval has passed since last log

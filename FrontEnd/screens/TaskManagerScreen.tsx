@@ -10,11 +10,14 @@ import {
   SafeAreaView,
   KeyboardAvoidingView,
   Platform,
+  Image,
 } from 'react-native';
 import { v4 as uuidv4 } from 'uuid';
 import { getTaskSuggestionsFromBackend } from '../services/hooks/useTaskSuggestion';
 import Swipeable from 'react-native-gesture-handler/Swipeable';
 import axiosInstance from '../utils/axiosInstance';
+import { DateTime } from 'luxon';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 
 // 子任务类型
@@ -68,6 +71,10 @@ interface Task {
   type: 'Health' | 'Family' | 'Baby' | 'Other';
   done: boolean;
   subTasks: SubTask[];
+  title: string;
+  description: string;
+  created_at: string;
+  completed: boolean;
 }
 
 // "建议子任务"的结构（包括是否被选中）
@@ -84,6 +91,7 @@ export default function TaskManagerScreen() {
   const [subTaskText, setSubTaskText] = useState('');
   const [subTaskSuggestions, setSubTaskSuggestions] = useState<SuggestedItem[]>([]);
   const [confirmClearVisible, setConfirmClearVisible] = useState(false);
+  const [filter, setFilter] = useState('all');
 
 
   const getSuggestionsAndCategory = async (mainTaskText: string) => {
@@ -103,6 +111,10 @@ export default function TaskManagerScreen() {
         type: category,
         done: false,
         subTasks: [],
+        title: taskText,
+        description: '',
+        created_at: DateTime.now().toISO()!,
+        completed: false,
       };
 
       setTasks([newTask, ...tasks]);
@@ -119,6 +131,10 @@ export default function TaskManagerScreen() {
         type: 'Other',
         done: false,
         subTasks: [],
+        title: taskText,
+        description: '',
+        created_at: DateTime.now().toISO()!,
+        completed: false,
       };
       setTasks([newTask, ...tasks]);
       setTaskText('');
@@ -224,7 +240,7 @@ export default function TaskManagerScreen() {
   const renderRightActions = (id: string) => {
     return (
       <TouchableOpacity style={styles.deleteButton} onPress={() => deleteTask(id)}>
-        <Text style={styles.deleteButtonText}>删除</Text>
+        <Text style={styles.deleteButtonText}>Delete</Text>
       </TouchableOpacity>
     );
   };
@@ -234,10 +250,22 @@ export default function TaskManagerScreen() {
     color: string
   ) => {
     const count = tasks.filter((task) => task.type === type).length;
+    const imageSource = {
+      'Health': require('../assets/Health.png'),
+      'Family': require('../assets/Family.png'),
+      'Baby': require('../assets/Baby.png'),
+      'Other': require('../assets/Other.png')
+    }[type];
+
     return (
       <View style={[styles.card, { backgroundColor: color }]}>
-        <Text style={styles.cardCount}>{count}</Text>
-        <Text style={styles.cardLabel}>{label}</Text>
+        <View style={styles.cardContent}>
+          <View style={styles.cardLeft}>
+            <Image source={imageSource} style={styles.categoryImage} />
+            <Text style={styles.cardLabel}>{label}</Text>
+          </View>
+          <Text style={styles.cardCount}>{count}</Text>
+        </View>
       </View>
     );
   };
@@ -295,10 +323,10 @@ export default function TaskManagerScreen() {
 
           {/* 这块如果你需要分类卡片，也可再写renderCategoryCard之类的 */}
           <View style={styles.cardRow}>
-            {renderCategoryCard('健康', 'Health', '#E8EAF6')}
-            {renderCategoryCard('家庭', 'Family', '#E0F2F1')}
-            {renderCategoryCard('心理', 'Baby', '#F3E5F5')}
-            {renderCategoryCard('其他', 'Other', '#ECEFF1')}
+            {renderCategoryCard('Health', 'Health', '#E0F2F1')}
+            {renderCategoryCard('Family', 'Family', '#F3E5F5')}
+            {renderCategoryCard('Baby', 'Baby', '#FEF3C7')}
+            {renderCategoryCard('Other', 'Other', '#EDE9FE')}
           </View> 
 
           <FlatList
@@ -320,15 +348,15 @@ export default function TaskManagerScreen() {
           >
             <View style={styles.modalBackground}>
               <View style={styles.modalContainer}>
-                <Text style={styles.modalTitle}>确认清除</Text>
-                <Text style={{ marginBottom: 16 }}>确定要删除所有已完成任务吗？此操作不可撤销。</Text>
+                <Text style={styles.modalTitle}>Confirm Clear</Text>
+                <Text style={{ marginBottom: 16 }}>Are you sure you want to delete all completed tasks? This action cannot be undone.</Text>
 
                 <View style={styles.modalButtonRow}>
                   <TouchableOpacity
                     style={[styles.modalButton, { backgroundColor: '#ccc' }]}
                     onPress={() => setConfirmClearVisible(false)}
                   >
-                    <Text style={styles.modalButtonText}>取消</Text>
+                    <Text style={styles.modalButtonText}>Cancel</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
                     style={[styles.modalButton, { backgroundColor: '#F44336' }]}
@@ -337,7 +365,7 @@ export default function TaskManagerScreen() {
                       setConfirmClearVisible(false);
                     }}
                   >
-                    <Text style={styles.modalButtonText}>确认</Text>
+                    <Text style={styles.modalButtonText}>Confirm</Text>
                   </TouchableOpacity>
                 </View>
               </View>
@@ -348,12 +376,12 @@ export default function TaskManagerScreen() {
           <View style={styles.inputRow}>
             <TextInput
               style={styles.input}
-              placeholder="添加主任务..."
+              placeholder="Add Main Task..."
               value={taskText}
               onChangeText={setTaskText}
             />
             <TouchableOpacity style={styles.addButton} onPress={addTask}>
-              <Text style={styles.addText}>添加</Text>
+              <Text style={styles.addText}>Add</Text>
             </TouchableOpacity>
           </View>
 
@@ -366,9 +394,9 @@ export default function TaskManagerScreen() {
           >
             <View style={styles.modalBackground}>
               <View style={styles.modalContainer}>
-                <Text style={styles.modalTitle}>添加子任务</Text>
+                <Text style={styles.modalTitle}>Add Sub Task</Text>
 
-                {/* 1) DeepSeek 建议子任务 */}
+                {/* 1) DeepSeek Suggested Sub Tasks */}
                 <View style={styles.suggestionContainer}>
                   {subTaskSuggestions.map((item, index) => (
                     <TouchableOpacity
@@ -384,27 +412,27 @@ export default function TaskManagerScreen() {
                   ))}
                 </View>
 
-                {/* 2) 手动输入子任务 */}
+                {/* 2) Manual Input Sub Task */}
                 <TextInput
                   style={styles.subTaskInput}
-                  placeholder="或在此输入子任务..."
+                  placeholder="Or enter sub task here..."
                   value={subTaskText}
                   onChangeText={setSubTaskText}
                 />
 
-                {/* 按钮行 */}
+                {/* Button Row */}
                 <View style={styles.modalButtonRow}>
                   <TouchableOpacity
                     style={[styles.modalButton, { backgroundColor: '#ccc' }]}
                     onPress={() => setSubTaskModalVisible(false)}
                   >
-                    <Text style={styles.modalButtonText}>取消</Text>
+                    <Text style={styles.modalButtonText}>Cancel</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
                     style={[styles.modalButton, { backgroundColor: '#4CAF50' }]}
                     onPress={addSubTask}
                   >
-                    <Text style={styles.modalButtonText}>确认</Text>
+                    <Text style={styles.modalButtonText}>Confirm</Text>
                   </TouchableOpacity>
                 </View>
               </View>
@@ -471,23 +499,33 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     justifyContent: 'space-between',
     marginBottom: 20,
-    marginTop: 20,
+    marginTop: 32,
   },
   card: {
     width: '48%',
     borderRadius: 12,
-    padding: 16,
+    padding: 20,
     marginBottom: 12,
     elevation: 2,
   },
+  cardContent: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  cardLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+  },
   cardCount: {
-    fontSize: 20,
+    fontSize: 24,
     fontWeight: 'bold',
+    color: '#666',
   },
   cardLabel: {
-    fontSize: 14,
+    fontSize: 16,
     color: '#555',
-    marginTop: 4,
   },
   
   taskDone: {
@@ -570,7 +608,7 @@ const styles = StyleSheet.create({
   },
   addButton: {
     marginLeft: 8,
-    backgroundColor: '#4CAF50',
+    backgroundColor: '#C4B5FD',
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderRadius: 8,
@@ -611,7 +649,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginBottom: 12,
   },
-  // DeepSeek 建议子任务区域
+  // DeepSeek Suggested Sub Tasks Area
   suggestionContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -628,7 +666,7 @@ const styles = StyleSheet.create({
   suggestionBubbleSelected: {
     backgroundColor: '#ADD8E6',
   },
-  // 自定义输入子任务
+  // Custom Input Sub Task
   subTaskInput: {
     borderWidth: 1,
     borderColor: '#ccc',
@@ -638,7 +676,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     backgroundColor: '#f9f9f9',
   },
-  // 弹窗按钮行
+  // Modal Button Row
   modalButtonRow: {
     flexDirection: 'row',
     justifyContent: 'flex-end',
@@ -652,5 +690,11 @@ const styles = StyleSheet.create({
   modalButtonText: {
     color: '#fff',
     fontWeight: 'bold',
+  },
+  categoryImage: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    resizeMode: 'contain',
   },
 });

@@ -191,14 +191,22 @@ export default function BabyProfileScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#FAFAF8',
+    paddingTop: Platform.OS === 'ios' ? 60 : 40,
   },
   header: {
     alignItems: 'center',
-    paddingVertical: 32,
+    marginTop: 20,
+    marginBottom: 30,
   },
   avatarContainer: {
-    position: 'relative',
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: '#F3E8FF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 20,
   },
   avatar: {
     width: 120,
@@ -227,10 +235,11 @@ const styles = StyleSheet.create({
     borderColor: '#FFFFFF',
   },
   form: {
-    paddingHorizontal: 24,
+    paddingHorizontal: 20,
+    paddingTop: 20,
   },
   inputGroup: {
-    marginBottom: 24,
+    marginBottom: 20,
   },
   label: {
     fontSize: 14,

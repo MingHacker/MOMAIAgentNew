@@ -152,12 +152,12 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   timeButton: {
-    borderWidth: 1,
-    borderColor: '#999',
     borderRadius: 8,
     padding: 10,
     marginTop: 6,
-    backgroundColor: '#eee',
+    backgroundColor: '#F9FAFB',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
   },
   input: {
     borderWidth: 1,

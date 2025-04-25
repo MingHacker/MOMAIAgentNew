@@ -434,7 +434,7 @@ const ChatBot = () => {
               activeOpacity={1} 
               onPress={handleModalClose}
             />
-            <View style={styles.chatContainer}>
+            <View style={styles.dialog}>
               <View style={styles.header}>
                 <View style={styles.headerContent}>
                   {renderBotIcon('header')}
@@ -515,6 +515,30 @@ const ChatBot = () => {
 };
 
 const styles = StyleSheet.create({
+  container: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    left: 0,
+    marginTop: 120,
+    paddingBottom: Platform.OS === 'ios' ? 40 : 20,
+  },
+  dialog: {
+    backgroundColor: '#fff',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    paddingTop: 16,
+    paddingHorizontal: 16,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: -2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 5,
+    maxHeight: Platform.OS === 'ios' ? height * 0.7 : height * 0.75,
+  },
   floatingButton: {
     position: 'absolute',
     width: 60,
@@ -537,24 +561,16 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.3)',
     justifyContent: 'flex-end',
-    paddingBottom: 80,
+    paddingBottom: 0,
   },
   modalDismissArea: {
     flex: 1,
-  },
-  chatContainer: {
-    height: Platform.OS === 'ios' ? height * 0.5 : height * 0.55,
-    backgroundColor: '#fff',
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    overflow: 'hidden',
-    marginBottom: 80,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 16,
+    padding: 12,
     borderBottomWidth: 1,
     borderBottomColor: '#f0f0f0',
   },
@@ -572,7 +588,7 @@ const styles = StyleSheet.create({
     padding: 8,
     borderBottomWidth: 1,
     borderBottomColor: '#f0f0f0',
-    maxHeight: 80,
+    maxHeight: 90,
   },
   quickBubble: {
     flex: 1,
@@ -601,6 +617,7 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 12,
     backgroundColor: '#fff',
+    maxHeight: Platform.OS === 'ios' ? height * 0.35 : height * 0.4,
   },
   messagesList: {
     paddingBottom: 16,

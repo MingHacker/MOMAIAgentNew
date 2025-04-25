@@ -298,7 +298,7 @@ export default function App() {
               <Stack.Screen name="Main" component={DrawerNavigator} />
             )}
           </Stack.Navigator>
-          <ChatBot />
+          {isAuthenticated && <ChatBot />}
         </NavigationContainer>
       </GestureHandlerRootView>
     </AuthContext.Provider>

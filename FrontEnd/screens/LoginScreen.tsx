@@ -9,6 +9,8 @@ import {
   KeyboardAvoidingView,
   Platform,
   Image,
+  TouchableWithoutFeedback,
+  Keyboard,
 } from 'react-native';
 import { ImageBackground } from 'react-native';
 import { api } from '../src/api';
@@ -33,50 +35,58 @@ export default function LoginScreen() {
   };
 
   return (
-    <View style={styles.container}>
-      <ImageBackground
-        source={require('../assets/backgroundwithicon3.png')}
-        style={styles.backgroundImage}
-        resizeMode="cover"
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+      <KeyboardAvoidingView 
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={styles.container}
       >
-        <View style={styles.content}>
-          <View style={styles.topSection}>
-            <Image
-              //source={require('../assets/loginicon4.png')}
-              //style={styles.logo}
-            />
-          </View>
+        <ImageBackground
+          source={require('../assets/backgroundwithicon3.png')}
+          style={styles.backgroundImage}
+          resizeMode="cover"
+        >
+          <View style={styles.content}>
+            <View style={styles.topSection}>
+              <Image
+                //source={require('../assets/loginicon4.png')}
+                //style={styles.logo}
+              />
+            </View>
 
-          <View style={styles.whiteBackground}>
-            <View style={styles.middleSection}>
-              <View style={styles.formContainer}>
-                <TextInput
-                  placeholder="Email"
-                  placeholderTextColor="#A1A1A1"
-                  style={styles.input}
-                  value={email}
-                  onChangeText={setEmail}
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                />
-                <TextInput
-                  placeholder="Password"
-                  placeholderTextColor="#A1A1A1"
-                  style={styles.input}
-                  value={password}
-                  onChangeText={setPassword}
-                  secureTextEntry
-                />
+            <View style={styles.whiteBackground}>
+              <View style={styles.middleSection}>
+                <View style={styles.formContainer}>
+                  <TextInput
+                    placeholder="Email"
+                    placeholderTextColor="#A1A1A1"
+                    style={styles.input}
+                    value={email}
+                    onChangeText={setEmail}
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                    returnKeyType="next"
+                  />
+                  <TextInput
+                    placeholder="Password"
+                    placeholderTextColor="#A1A1A1"
+                    style={styles.input}
+                    value={password}
+                    onChangeText={setPassword}
+                    secureTextEntry
+                    returnKeyType="done"
+                    onSubmitEditing={handleSubmit}
+                  />
 
-                <TouchableOpacity style={styles.button} onPress={handleSubmit}>
-                  <Text style={styles.buttonText}>Log in</Text>
-                </TouchableOpacity>
+                  <TouchableOpacity style={styles.button} onPress={handleSubmit}>
+                    <Text style={styles.buttonText}>Log in</Text>
+                  </TouchableOpacity>
+                </View>
               </View>
             </View>
           </View>
-        </View>
-      </ImageBackground>
-    </View>
+        </ImageBackground>
+      </KeyboardAvoidingView>
+    </TouchableWithoutFeedback>
   );
 }
 

@@ -84,7 +84,7 @@ const DashboardScreen = () => {
         if (babies && babies.length > 0) {
           // Assuming we display the first baby for now
           const mappedInfo = mapBabyProfileToBabyInfo(babies[0]);
-          AsyncStorage.setItem('baby_id', mappedInfo.id);
+          await AsyncStorage.setItem('baby_id', mappedInfo.id);
           setBabyInfo(mappedInfo);
           fetchReminders(mappedInfo.id);
           
@@ -125,12 +125,12 @@ const DashboardScreen = () => {
     if (!selectedType) throw new Error('记录类型为空');
     if (!babyInfo) throw new Error('宝宝信息为空');
 
-    let logType: 'feeding' | 'diaper' | 'sleep' | 'cry' | 'bowel';
+    let logType: 'feeding' | 'diaper' | 'sleep' | 'outside';
     switch (selectedType) {
       case 'feeding': logType = 'feeding'; break;
       case 'sleep': logType = 'sleep'; break;
       case 'diaper': logType = 'diaper'; break;
-      case 'outside': logType = 'cry'; break;
+      case 'outside': logType = 'outside'; break;
       default: throw new Error('未知记录类型');
     }
 
@@ -152,6 +152,7 @@ const DashboardScreen = () => {
         setFormData({});
         if (babyInfo && selectedType) {
           completeRelatedReminder(babyInfo.id, selectedType);
+          fetchReminders(babyInfo.id);
         }
       },
       onError: (err) => {
@@ -173,6 +174,8 @@ const DashboardScreen = () => {
       Toast.show({ type: 'error', text1: '❌ 完成提醒失败' });
     }
   };
+
+
 
   const submitRecord = () => {
     if (!validateFormData(selectedType, formData)) {

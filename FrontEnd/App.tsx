@@ -112,7 +112,7 @@ function TabNavigator() {
         name="QAChat" 
         component={QAChat}
         options={{
-          title: 'Chat',
+          title: 'Ask BabyGPT 💬',
         }}
       />
     </Tab.Navigator>

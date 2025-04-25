@@ -3,7 +3,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { NavigationContainer, useNavigation, DrawerActions } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
-import { createDrawerNavigator } from '@react-navigation/drawer';
+import { createDrawerNavigator, DrawerItem } from '@react-navigation/drawer';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Ionicons from 'react-native-vector-icons/Ionicons';
@@ -26,6 +26,7 @@ import EntryScreen from './screens/EntryScreen';
 import BabyProfileScreen from './screens/BabyProfileScreen';
 import RecommendedFeaturesScreen from './screens/RecommandFeatureScreen';
 import TimelineScreen from './screens/TimelineScreen';
+import { Alert } from 'react-native';
 
 type AuthContextType = {
   isAuthenticated: boolean;
@@ -134,9 +135,42 @@ type DrawerNavigatorProps = {
 };
 
 function CustomDrawerContent(props: DrawerContentComponentProps) {
+  const { logout } = useAuth();
+
+  const handleLogout = () => {
+    Alert.alert(
+      'Logout',
+      'Are you sure you want to log out?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Logout',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await api.logout(); // 清除 supabase 和 token
+              await logout();     // 触发上下文状态更新
+            } catch (e) {
+              console.error('Logout error:', e);
+            }
+          },
+        },
+      ],
+      { cancelable: true }
+    );
+  };
+
   return (
     <DrawerContentScrollView {...props}>
       <DrawerItemList {...props} />
+      <DrawerItem
+        label="Logout"
+        onPress={handleLogout}
+        icon={({ color, size }) => (
+          <Ionicons name="log-out-outline" size={size} color={color} />
+        )}
+        labelStyle={{ color: '#EF4444', marginLeft: -16 }}
+      />
     </DrawerContentScrollView>
   );
 }
@@ -144,6 +178,7 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
 function DrawerNavigator() {
   return (
     <Drawer.Navigator
+      drawerContent={(props) => <CustomDrawerContent {...props} />}
       id={undefined}
       defaultStatus="closed"
       screenOptions={{

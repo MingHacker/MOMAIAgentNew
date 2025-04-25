@@ -1,6 +1,7 @@
 import React from 'react';
 import { Modal, View, Text, Button, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
 import FormFields from './FormFields';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 const RecordModal = ({
   visible,
@@ -10,15 +11,29 @@ const RecordModal = ({
   formData,
   setFormData,
   onSubmit,
-  submitting, // 👈 新增 props
+  submitting,
 }) => {
+  const typeIcons = {
+    feeding: 'baby-bottle',
+    sleep: 'sleep',
+    diaper: 'baby-face-outline',
+    outside: 'baby-carriage',
+  };
+
+  const typeLabels = {
+    feeding: 'Feeding',
+    sleep: 'Sleep',
+    diaper: 'Diaper',
+    outside: 'Activity',
+  };
+
   return (
     <Modal visible={visible} transparent animationType="fade">
       <View style={styles.overlay}>
         <View style={styles.modalCard}>
-          <Text style={styles.modalTitle}>记录类型</Text>
+          <Text style={styles.modalTitle}>Record Type</Text>
 
-          {/* 类型选择按钮 */}
+          {/* Type selection buttons */}
           <View style={styles.typeSelectorRow}>
             {['feeding', 'sleep', 'diaper', 'outside'].map((type) => (
               <TouchableOpacity
@@ -26,35 +41,41 @@ const RecordModal = ({
                 onPress={() => setSelectedType(type)}
                 style={[styles.bubble, selectedType === type && styles.bubbleSelected]}
               >
+                <MaterialCommunityIcons 
+                  name={typeIcons[type]} 
+                  size={24} 
+                  color={selectedType === type ? '#fff' : '#8B5CF6'} 
+                  style={styles.bubbleIcon}
+                />
                 <Text style={selectedType === type ? styles.bubbleTextSelected : styles.bubbleText}>
-                  {type}
+                  {typeLabels[type]}
                 </Text>
               </TouchableOpacity>
             ))}
           </View>
 
-          {/* 表单组件 */}
+          {/* Form component */}
           <FormFields
             selectedType={selectedType}
             formData={formData}
             setFormData={setFormData}
           />
 
-          {/* 提交按钮 */}
+          {/* Submit button */}
           <TouchableOpacity
-            style={[styles.submitBtn, submitting && { opacity: 0.6 }]}
+            style={[styles.submitBtn, submitting && styles.submitBtnDisabled]}
             onPress={onSubmit}
             disabled={submitting}
           >
             <Text style={styles.submitText}>
-              {submitting ? '提交中...' : '提交'}
+              {submitting ? 'Saving...' : 'Save Record'}
             </Text>
           </TouchableOpacity>
 
-          {/* 关闭按钮 */}
-          <View style={{ marginTop: 16 }}>
-            <Button title="关闭" onPress={onClose} />
-          </View>
+          {/* Close button */}
+          <TouchableOpacity style={styles.closeBtn} onPress={onClose}>
+            <Text style={styles.closeBtnText}>Cancel</Text>
+          </TouchableOpacity>
         </View>
       </View>
     </Modal>
@@ -64,58 +85,95 @@ const RecordModal = ({
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    backgroundColor: 'rgba(0,0,0,0.2)',
     justifyContent: 'center',
     alignItems: 'center',
   },
   modalCard: {
     width: '90%',
-    backgroundColor: 'white',
-    borderRadius: 16,
+    backgroundColor: '#fff',
+    borderRadius: 24,
     padding: 20,
-    maxHeight: '85%',
+    maxHeight: '80%',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.08,
+    shadowRadius: 3.84,
+    elevation: 5,
   },
   modalTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
+    fontSize: 18,
+    fontWeight: '600',
     textAlign: 'center',
-    marginBottom: 12,
+    marginBottom: 16,
+    color: '#4B5563',
   },
   typeSelectorRow: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
-    marginBottom: 12,
+    justifyContent: 'space-between',
+    marginBottom: 20,
+    paddingHorizontal: 4,
   },
   bubble: {
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: '#aaa',
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 16,
+    backgroundColor: '#F9FAFB',
+    alignItems: 'center',
+    minWidth: 75,
+    marginHorizontal: 2,
   },
   bubbleSelected: {
-    backgroundColor: '#6C63FF',
-    borderColor: '#6C63FF',
+    backgroundColor: '#F3E8FF',
+  },
+  bubbleIcon: {
+    marginBottom: 4,
   },
   bubbleText: {
-    color: '#333',
+    color: '#6B7280',
     fontWeight: '500',
+    fontSize: 13,
   },
   bubbleTextSelected: {
-    color: '#fff',
+    color: '#6B7280',
     fontWeight: '600',
+    fontSize: 13,
   },
   submitBtn: {
-    marginTop: 16,
-    backgroundColor: '#6C63FF',
-    paddingVertical: 10,
-    borderRadius: 10,
+    marginTop: 20,
+    backgroundColor: '#F3E8FF',
+    paddingVertical: 12,
+    borderRadius: 12,
     alignItems: 'center',
+    shadowColor: '#F3E8FF',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  submitBtnDisabled: {
+    opacity: 0.6,
   },
   submitText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
+    color: '#6B7280',
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  closeBtn: {
+    marginTop: 12,
+    paddingVertical: 10,
+    alignItems: 'center',
+  },
+  closeBtnText: {
+    color: '#6B7280',
+    fontSize: 15,
+    fontWeight: '500',
   },
 });
 

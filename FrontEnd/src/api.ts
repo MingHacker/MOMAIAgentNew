@@ -145,7 +145,19 @@ export const api = {
       return null;
     }
   },
-
+  logout: async (): Promise<void> => {
+    try {
+      await AsyncStorage.removeItem('access_token');
+      await AsyncStorage.removeItem('refresh_token');
+  
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+  
+      console.log('🔒 Logged out successfully');
+    } catch (error) {
+      console.error('❌ Logout failed:', error);
+    }
+  },
   // --- Baby Profile Endpoints ---
   createBabyProfile: async (baby: BabyProfileCreate): Promise<BabyProfile> => {
     try {

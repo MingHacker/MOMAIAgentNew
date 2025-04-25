@@ -138,3 +138,34 @@ def call_gpt_mom_analysis(data: dict) -> str:
     )
 
     return response.choices[0].message.content.strip()
+
+
+def call_gpt_mom_onesentence(data: dict) -> str:
+    try:
+        prompt = mom_health_prompt(
+            hrv=data["hrv"],
+            sleep_hours=data["sleep"],
+            steps=data["steps"],
+            resting_heart_rate=data["resting_heart_rate"],
+            breathing_rate=data["breathing_rate"])
+        
+        response = client.chat.completions.create(
+            model="gpt-4o",
+            messages=[
+                {
+                    "role": "system",
+                    "content": "你是妈妈最好的朋友 陪伴着她鼓励她，提供情绪价值. Provide a single, short, concise sentence within 15 words about the mom's health status. In English. For example, you are doing great, I'm always here for you, you are a great mom, etc."
+                },
+                {
+                    "role": "user",
+                    "content": prompt
+                }
+            ],
+            temperature=0.6,
+            max_tokens=100
+        )
+        result = response.choices[0].message.content.strip()
+        return result
+    except Exception as e:
+        print("❌ Error calling GPT:", e)
+        return "Unable to analyze mom health data at this time."

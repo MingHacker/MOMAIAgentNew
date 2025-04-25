@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, Image, StyleSheet } from 'react-native';
+import { View, Text, Image, StyleSheet, Platform } from 'react-native';
 
 interface BabyInfo {
   name: string;
@@ -24,13 +24,13 @@ const BabyInfoCard: React.FC<BabyInfoCardProps> = ({ babyInfo }) => {
         </View>
         <View style={styles.rightSection}>
           <View style={styles.statItem}>
-            <Text style={styles.statLabel}>Age: {babyInfo.age} days</Text>
+            <Text style={styles.statLabel}>Age: {babyInfo.age} </Text>
           </View>
           <View style={styles.statItem}>
-            <Text style={styles.statLabel}>Weight: {babyInfo.weight} kg</Text>
+            <Text style={styles.statLabel}>Weight: {babyInfo.weight} </Text>
           </View>
           <View style={styles.statItem}>
-            <Text style={styles.statLabel}>Height: {babyInfo.height} cm</Text>
+            <Text style={styles.statLabel}>Height: {babyInfo.height} </Text>
           </View>
         </View>
       </View>
@@ -40,11 +40,17 @@ const BabyInfoCard: React.FC<BabyInfoCardProps> = ({ babyInfo }) => {
 
 const styles = StyleSheet.create({
   card: {
-    padding: 16,
-    backgroundColor: '#fff',
-    marginBottom: 8,
+    backgroundColor: '#FFFFF',
     borderRadius: 16,
-    elevation: 1,
+    paddingVertical: 12,     // ↓ from 16 → 12
+    paddingHorizontal: 14,   // ↓ slightly
+    marginHorizontal: 16,
+    marginTop: 8,           // ↓ from 16
+    shadowColor: '#000',
+    shadowOpacity: 0.08,
+    shadowOffset: { width: 0, height: 4 },
+    shadowRadius: 10,
+    elevation: 2,
   },
   header: {
     flexDirection: 'row',
@@ -59,22 +65,29 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
   },
   avatar: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    marginRight: 12,
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    marginRight: 10,
   },
   name: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: '600',
+    color: '#4A4A4A',
+    marginBottom: 4,
+    fontFamily: Platform.OS === 'ios' ? 'Avenir Next' : 'sans-serif',
+    letterSpacing: 0.2,
   },
   statItem: {
     alignItems: 'flex-end',
-    marginBottom: 4,
+    marginBottom: 2,
   },
   statLabel: {
-    fontSize: 12,
-    color: '#666',
+    fontSize: 13,
+    color: '#8E8E93',
+    marginBottom: 2,
+    fontFamily: Platform.OS === 'ios' ? 'Avenir' : 'sans-serif',
+    letterSpacing: 0.2,
   },
   statValue: {
     fontSize: 14,

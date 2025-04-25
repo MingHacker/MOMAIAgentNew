@@ -380,7 +380,7 @@ function handleApiError(error: unknown): never {
 
 // --- Mom Endpoints ---
 
-type MomSummaryResponse = {
+export type MomSummaryResponse = {
   success: boolean;
   summary: string;
 };
@@ -400,6 +400,11 @@ export type MomHealthData = {
 export type MomHealthResponse = {
   success: boolean;
   data: MomHealthData[];
+};
+
+export type MomOneSentenceResponse = {
+  success: boolean;
+  onesentence: string;
 };
 
 export const momApi = {
@@ -430,6 +435,17 @@ export const momApi = {
     } catch (error) {
       handleApiError(error);
       return { success: false, data: [] };
+    }
+  },
+
+  getOneSentence: async (): Promise<MomOneSentenceResponse> => {
+    try {
+      const res = await axiosInstance.get<MomOneSentenceResponse>('/api/mom/onesentence');
+      console.log('🧠 获取到的妈妈一句话：', res.data);
+      return res.data;
+    } catch (error) {
+      handleApiError(error);
+      return { success: false, onesentence: '' };
     }
   }
 };

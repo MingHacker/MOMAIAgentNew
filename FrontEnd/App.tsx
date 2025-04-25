@@ -12,6 +12,7 @@ import { navigationStyles } from './styles/navigation';
 import 'react-native-gesture-handler';
 import 'react-native-reanimated';
 import ChatBot from './components/ChatBot';
+import { DrawerContentScrollView, DrawerItemList, DrawerContentComponentProps } from '@react-navigation/drawer';
 
 // Screens
 import DashboardScreen from './screens/DashBoardScreen';
@@ -132,6 +133,14 @@ type DrawerNavigatorProps = {
   id?: string;
 };
 
+function CustomDrawerContent(props: DrawerContentComponentProps) {
+  return (
+    <DrawerContentScrollView {...props}>
+      <DrawerItemList {...props} />
+    </DrawerContentScrollView>
+  );
+}
+
 function DrawerNavigator() {
   return (
     <Drawer.Navigator
@@ -145,27 +154,25 @@ function DrawerNavigator() {
         drawerActiveBackgroundColor: '#F3E8FF',
         drawerActiveTintColor: '#4C3575',
         drawerInactiveTintColor: '#666',
-        drawerLabelStyle: navigationStyles.drawerLabelStyle,
+        drawerLabelStyle: {
+          ...navigationStyles.drawerLabelStyle,
+          marginLeft: 32
+        },
         overlayColor: 'rgba(0,0,0,0.5)',
+        drawerItemStyle: {
+          paddingVertical: 8,
+          marginVertical: 5,
+          borderRadius: 5
+        }
       }}
     >
       <Drawer.Screen 
         name="MainTabs" 
         component={TabNavigator} 
         options={{ 
-          title: '主页',
+          title: 'Home',
           drawerIcon: ({ focused, color, size }) => (
-            <Ionicons name={focused ? 'home' : 'home-outline'} size={24} color={color} />
-          )
-        }} 
-      />
-      <Drawer.Screen 
-        name="Welcome" 
-        component={WelcomeScreen} 
-        options={{ 
-          title: 'Welcome',
-          drawerIcon: ({ focused, color, size }) => (
-            <Ionicons name={focused ? 'heart' : 'heart-outline'} size={24} color={color} />
+            <Ionicons name={focused ? 'home' : 'home-outline'} size={18} color={color} />
           )
         }} 
       />
@@ -173,41 +180,29 @@ function DrawerNavigator() {
         name="BabyProfile" 
         component={BabyProfileScreen} 
         options={{ 
-          title: '宝宝信息',
+          title: 'Profile',
           drawerIcon: ({ focused, color, size }) => (
-            <Ionicons name={focused ? 'person' : 'person-outline'} size={24} color={color} />
+            <Ionicons name={focused ? 'person' : 'person-outline'} size={18} color={color} />
           )
         }} 
-        
       />
       <Drawer.Screen 
         name="Timeline" 
         component={TimelineScreen} 
         options={{ 
-          title: 'Timeline',
+          title: 'Timeline Story',
           drawerIcon: ({ focused, color, size }) => (
-            <Ionicons name={focused ? 'calendar' : 'calendar-outline'} size={24} color={color} />
+            <Ionicons name={focused ? 'calendar' : 'calendar-outline'} size={18} color={color} />
           )
         }} 
       />
-      
       <Drawer.Screen 
         name="RecommendedFeatures" 
         component={RecommendedFeaturesScreen} 
         options={{ 
-          title: '推荐功能',
+          title: 'Feature Card',
           drawerIcon: ({ focused, color, size }) => (
-            <Ionicons name={focused ? 'star' : 'star-outline'} size={24} color={color} />
-          )
-        }} 
-      />
-      <Drawer.Screen 
-        name="Settings" 
-        component={InitialInfoScreen} 
-        options={{ 
-          title: '设置',
-          drawerIcon: ({ focused, color, size }) => (
-            <Ionicons name={focused ? 'settings' : 'settings-outline'} size={24} color={color} />
+            <Ionicons name={focused ? 'star' : 'star-outline'} size={18} color={color} />
           )
         }} 
       />

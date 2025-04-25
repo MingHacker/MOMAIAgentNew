@@ -26,7 +26,7 @@ from api.baby import router as baby_router
 from api.emotion import router as emotion_router
 from api.chat import router as chat_router
 from api.timeline import router as timeline_router
-
+from api.featurecard import router as featurecard_router
 def serialize_datetime(obj):
     if isinstance(obj, datetime):
         return obj.isoformat()
@@ -456,7 +456,7 @@ app.include_router(task_router)
 app.include_router(emotion_router)
 app.include_router(chat_router)
 app.include_router(timeline_router)
-
+app.include_router(featurecard_router)
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)

@@ -1,13 +1,52 @@
-import React from 'react';
-import { Image, View, Text, StyleSheet } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity, Image } from 'react-native';
+import { momApi, MomOneSentenceResponse } from '../src/api';
+import { Platform } from 'react-native';
+
 
 export default function MomDashboardSentence() {
+  const [loading, setLoading] = useState(true);
+  const [summary, setSummary] = useState<MomOneSentenceResponse | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchSummary = async () => {
+    try {
+      const res = await momApi.getOneSentence();
+      setSummary(res);
+    } catch (e) {
+      setError('Something went wrong.');
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchSummary();
+  }, []);
+
+  if (loading) {
+    return (
+      <View style={styles.quickSummaryCard}>
+        <ActivityIndicator size="small" color="#D946EF" />
+        <Text style={styles.summaryText}>Loading today's wellness...</Text>
+      </View>
+    );
+  }
+
+  if (error || !summary) {
+    return (
+      <View style={styles.quickSummaryCard}>
+        <Text style={styles.summaryText}>🌸 Be gentle with yourself today 💜</Text>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.quickSummaryCard}>
       <Image source={require('../assets/sleepy.png')} style={styles.image} />
       <View style={{ flex: 1 }}>
-        <Text style={styles.title}>Mom's Daily Insight</Text>
-        <Text style={styles.summaryText}>You slept only 6.0h. Be gentle with yourself today 💜</Text>
+        <Text style={styles.summaryText}>{summary.onesentence}</Text>
       </View>
     </View>
   );

@@ -23,3 +23,12 @@ class ReminderCreate(BaseModel):
         json_encoders = {
             datetime: lambda v: v.isoformat()
         }
+
+# create table features (
+#   id text primary key,         -- 比如 'feed'
+#   name text not null,          -- 显示名，如 "喂奶"
+#   icon_url text,               -- 图标地址
+#   order int,                   -- 前端排序
+#   age_min int,                 -- 推荐的最小月龄（可选）
+#   age_max int                  -- 推荐的最大月龄（可选）
+# );

@@ -18,7 +18,7 @@ from agents.mommanager.graph import build_mom_manager_graph
 from agents.mommanager.schema import MomAgentState
 
 # GPT 分析（温柔鼓励）
-from agents.mom_manager import call_gpt_mom_analysis, get_mom_health_today
+from agents.mom_manager import call_gpt_mom_analysis, get_mom_health_today, call_gpt_mom_onesentence
 
 load_dotenv()
 
@@ -56,6 +56,10 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
 class MomAnalysisResponse(BaseModel):
     success: bool
     summary: str  # GPT 生成的关于妈妈健康与建议的分析内容
+
+class MomOneSentenceResponse(BaseModel):
+    success: bool
+    onesentence: str  # GPT 生成的关于妈妈健康与建议的分析内容
 
 class MomAgentState(BaseModel):
     summary: str
@@ -104,6 +108,40 @@ def get_today_mom_summary(user_id: str = Depends(get_current_user)):
         print(f"发生错误：{str(e)}")
         return JSONResponse(status_code=500, content={"success": False, "summary": str(e)})
 
+@router.get("/api/mom/onesentence", response_model=MomOneSentenceResponse, status_code=status.HTTP_200_OK)
+def get_today_mom_onesentence(user_id: str = Depends(get_current_user)):
+    try:
+        data = get_mom_health_today(user_id, supabase)
+        print(f"获取到的健康数据：{data}")
+        
+        if not data.get("success"):
+            return JSONResponse(
+                status_code=500,
+                content={"success": False, "onesentence": data.get("message", "获取健康数据失败")}
+            )
+            
+        health_data = data.get("data", {})
+        if not health_data:
+            return JSONResponse(
+                status_code=500,
+                content={"success": False, "onesentence": "没有找到健康数据"}
+            )
+        
+        prompt_input = {
+            "hrv": health_data.get("hrv"),
+            "sleep": health_data.get("sleep_hours"),
+            "steps": health_data.get("steps"),
+            "resting_heart_rate": health_data.get("resting_heart_rate"),
+            "breathing_rate": health_data.get("breathing_rate"),
+            "mood": health_data.get("mood"),
+        }
+        print(f"发送给 GPT 的数据：{prompt_input}")
+        analysis = call_gpt_mom_onesentence(prompt_input)
+        return {"success": True, "onesentence": analysis}
+    except Exception as e:
+        print(f"发生错误：{str(e)}")
+        return JSONResponse(status_code=500, content={"success": False, "onesentence": str(e)})
+    
 
 ######### ✅ 2. 每日健康数据（图表卡片用）
 @router.get("/api/mom/health/daily", status_code=status.HTTP_200_OK)

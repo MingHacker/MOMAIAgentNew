@@ -117,7 +117,7 @@ MOM AI Agent/
 1. **Clone the repository:**
 
    ```bash
-   git clone <repository-url>
+   git clone https://github.com/MingHacker/MOMAIAgentNew.git
    cd MOM-AI-Agent
    ```
 

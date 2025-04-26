@@ -124,8 +124,8 @@ export const api = {
   loginWithToken: async (): Promise<AuthResponse | null> => {
     try {
       const token = await AsyncStorage.getItem('access_token');
-      if (!token) throw new Error('No access token found');
-
+      // if (!token)  console.log('No access token found');
+      if (!token) return null;
       const { data, error } = await supabase.auth.getUser(token);
 
       if (error || !data.user) {
@@ -141,7 +141,7 @@ export const api = {
         },
       };
     } catch (error) {
-      console.error("loginWithToken error:", error);
+      console.log("loginWithToken:", error);
       return null;
     }
   },

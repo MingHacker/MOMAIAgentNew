@@ -81,14 +81,14 @@ def get_today_mom_summary(user_id: str = Depends(get_current_user)):
         
         if not data.get("success"):
             return JSONResponse(
-                status_code=500,
+                status_code=200,
                 content={"success": False, "summary": data.get("message", "获取健康数据失败")}
             )
             
         health_data = data.get("data", {})
         if not health_data:
             return JSONResponse(
-                status_code=500,
+                status_code=200,
                 content={"success": False, "summary": "没有找到健康数据"}
             )
         
@@ -116,14 +116,14 @@ def get_today_mom_onesentence(user_id: str = Depends(get_current_user)):
         
         if not data.get("success"):
             return JSONResponse(
-                status_code=500,
+                status_code=200,
                 content={"success": False, "onesentence": data.get("message", "获取健康数据失败")}
             )
             
         health_data = data.get("data", {})
         if not health_data:
             return JSONResponse(
-                status_code=500,
+                status_code=200,
                 content={"success": False, "onesentence": "没有找到健康数据"}
             )
         

@@ -427,6 +427,7 @@ const ChatBot = () => {
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           style={styles.keyboardAvoidView}
+          keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
         >
           <View style={styles.modalOverlay}>
             <TouchableOpacity 
@@ -537,13 +538,13 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 5,
-    maxHeight: Platform.OS === 'ios' ? height * 0.7 : height * 0.75,
+    height: Platform.OS === 'ios' ? height * 0.6 : height * 0.65,
   },
   floatingButton: {
     position: 'absolute',
-    width: 60,
-    height: 60,
-    borderRadius: 30,
+    width: 68,
+    height: 68,
+    borderRadius: 34,
     backgroundColor: '#fff',
     justifyContent: 'center',
     alignItems: 'center',
@@ -561,7 +562,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.3)',
     justifyContent: 'flex-end',
-    paddingBottom: 0,
   },
   modalDismissArea: {
     flex: 1,
@@ -570,32 +570,33 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 12,
+    padding: 16,
     borderBottomWidth: 1,
     borderBottomColor: '#f0f0f0',
+    height: 65,
   },
   headerContent: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   headerText: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: '600',
     color: '#8B5CF6',
     marginLeft: 8,
   },
   quickBubblesContainer: {
-    padding: 8,
+    padding: 12,
     borderBottomWidth: 1,
     borderBottomColor: '#f0f0f0',
-    maxHeight: 90,
+    height: 105,
   },
   quickBubble: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#F3E8FF',
-    padding: 12,
+    padding: 16,
     borderRadius: 40,
     margin: 4,
     minWidth: '45%',
@@ -610,14 +611,14 @@ const styles = StyleSheet.create({
   },
   quickBubbleText: {
     color: '#8B5CF6',
-    fontSize: 14,
+    fontSize: 16,
     fontFamily: Platform.OS === 'ios' ? 'SF Pro Rounded' : 'Roboto',
   },
   messagesContainer: {
     flex: 1,
-    padding: 12,
+    padding: 16,
     backgroundColor: '#fff',
-    maxHeight: Platform.OS === 'ios' ? height * 0.35 : height * 0.4,
+    minHeight: Platform.OS === 'ios' ? height * 0.25 : height * 0.3,
   },
   messagesList: {
     paddingBottom: 16,
@@ -640,7 +641,8 @@ const styles = StyleSheet.create({
   },
   messageText: {
     color: '#4C3575',
-    fontSize: 15,
+    fontSize: 16,
+    lineHeight: 22,
     fontFamily: Platform.OS === 'ios' ? 'SF Pro Rounded' : 'Roboto',
   },
   timestamp: {
@@ -656,21 +658,22 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: '#f0f0f0',
     backgroundColor: '#fff',
+    height: 65,
   },
-  
   input: {
     flex: 1,
-    height: 50,
+    height: 46,
     backgroundColor: '#F3E8FF',
-    borderRadius: 20,
+    borderRadius: 23,
     paddingHorizontal: 16,
     marginRight: 8,
     color: '#4C3575',
+    fontSize: 16,
   },
   sendButton: {
-    width: 50,
-    height: 50,
-    borderRadius: 40,
+    width: 46,
+    height: 46,
+    borderRadius: 23,
     backgroundColor: '#F3E8FF',
     justifyContent: 'center',
     alignItems: 'center',
@@ -693,13 +696,13 @@ const styles = StyleSheet.create({
     backgroundColor: '#FF4B4B',
   },
   customFloatingIcon: {
-    width: 48,
-    height: 48,
+    width: 56,
+    height: 56,
     margin: 0,
   },
   customHeaderIcon: {
-    width: 32,
-    height: 32,
+    width: 40,
+    height: 40,
     marginRight: 8,
   },
   loadMoreButton: {

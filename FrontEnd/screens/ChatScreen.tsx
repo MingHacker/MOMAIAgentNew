@@ -106,7 +106,7 @@ export default function QAScreen() {
         keyboardVerticalOffset={Platform.OS === 'ios' ? 80 : 0}
       >
         <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
-          <Text style={styles.title}>Ask BabyGPT 💬</Text>
+       
 
           <View style={styles.chatBubbleWrap}>
             {submitted && answer !== '' && (
@@ -158,22 +158,25 @@ const styles = StyleSheet.create({
   container: {
     backgroundColor: '#FAFAF8',
     padding: 20,
-    paddingTop: 40,
+    paddingTop: 20,
     flexGrow: 1,
+    paddingBottom: Platform.OS === 'ios' ? 140 : 120,
   },
   title: {
     fontSize: 20,
     fontWeight: '600',
-    marginBottom: 12,
+    marginBottom: 8,
     textAlign: 'center',
     color: '#4B5563',
     fontFamily: 'System',
   },
   inputArea: {
-    marginTop: 10,
+    marginTop: 0,
+    marginBottom: Platform.OS === 'ios' ? 40 : 30,
     backgroundColor: '#fff',
     borderRadius: 24,
     padding: 16,
+    paddingBottom: 10,
     shadowColor: '#ccc',
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.15,
@@ -214,6 +217,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     marginTop: 10,
+    marginBottom: Platform.OS === 'ios' ? 10 : 5,
   },
   iconButton: {
     backgroundColor: '#F3F4F6',
@@ -243,8 +247,8 @@ const styles = StyleSheet.create({
     marginTop: 16,
   },
   chatBubbleWrap: {
-    marginBottom: 16,
-    minHeight: '30%',
+    marginBottom: 12,
+    minHeight: '25%',
     justifyContent: 'flex-start',
   },
   answerBubble: {
@@ -259,5 +263,22 @@ const styles = StyleSheet.create({
     color: '#333',
     lineHeight: 26,
     fontFamily: 'System',
+  },
+  submitButton: {
+    position: 'absolute',
+    bottom: Platform.OS === 'ios' ? 100 : 80,
+    alignSelf: 'center',
+    backgroundColor: '#8B5CF6',
+    paddingHorizontal: 32,
+    paddingVertical: 12,
+    borderRadius: 25,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
   },
 });

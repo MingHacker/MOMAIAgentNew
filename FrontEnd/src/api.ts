@@ -106,11 +106,6 @@ export const api = {
 
       const access_token = data.session.access_token;
       const refresh_token = data.session.refresh_token;
-
-      console.log('Email:', credentials.email);
-      console.log('Password:', credentials.password);
-      console.log('Access token:', access_token);
-      console.log('Refresh token:', refresh_token);
       // Save token locally
       await AsyncStorage.setItem('access_token', access_token);
       await AsyncStorage.setItem('refresh_token', refresh_token);

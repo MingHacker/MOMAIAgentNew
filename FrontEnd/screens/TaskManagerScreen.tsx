@@ -12,6 +12,7 @@ import {
   Platform,
   Image,
 } from 'react-native';
+import 'react-native-get-random-values';
 import { v4 as uuidv4 } from 'uuid';
 import { getTaskSuggestionsFromBackend } from '../services/hooks/useTaskSuggestion';
 import Swipeable from 'react-native-gesture-handler/Swipeable';

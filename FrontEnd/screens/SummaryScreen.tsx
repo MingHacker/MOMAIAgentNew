@@ -84,11 +84,11 @@ export default function HealthSummaryScreen() {
   };
 
   return (
-    <SafeAreaView style={[styles.safeArea, { paddingBottom: 75 }]}>
+    <SafeAreaView style={styles.safeArea}>
       <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 20 }}>
         <BabyStatusCard summary={babySummary} />
         <MomStatusCard summary={momSummary} />
-        <MoodSelector onMoodSelect={(selectedMood) => setMood(selectedMood)} />
+        <MoodSelector mood={mood} setMood={setMood} />
 
 
         {/* Baby Feeding Card */}
@@ -102,16 +102,14 @@ export default function HealthSummaryScreen() {
             data={{
               labels: weekLabels,
               datasets: [
-                { data: babyData?.map((item) => item.feed_total_ml) ?? [0] },
+                { data: babyData?.map((item) => item.feed_total_ml) ?? [0] }, // 用真实数据
               ],
             }}
             width={screenWidth * 0.9}
-            height={140}
+            height={150}
             chartConfig={chartConfig}
             style={styles.chartStyle}
             bezier
-            withDots={false}
-            withInnerLines={false}
           />
         </View>
 
@@ -134,8 +132,6 @@ export default function HealthSummaryScreen() {
                 chartConfig={chartConfig}
                 style={styles.chartStyle}
                 bezier
-                withDots={false}
-                withInnerLines={false}
               />
             </View>
 
@@ -157,7 +153,7 @@ export default function HealthSummaryScreen() {
                 height={150}
                 chartConfig={chartConfig}
                 style={styles.chartStyle}
-                withHorizontalLabels={false}
+          
               />
             </View>
 
@@ -176,10 +172,9 @@ export default function HealthSummaryScreen() {
                   ],
                 }}
                 width={screenWidth * 0.9}
-                height={140}
+                height={150}
                 chartConfig={chartConfig}
                 style={styles.chartStyle}
-                withHorizontalLabels={false}
               />
             </View>
 
@@ -202,7 +197,6 @@ export default function HealthSummaryScreen() {
                 height={150}
                 chartConfig={chartConfig}
                 style={styles.chartStyle}
-                withHorizontalLabels={false}
               />
             </View>
 
@@ -225,7 +219,6 @@ export default function HealthSummaryScreen() {
                 height={150}
                 chartConfig={chartConfig}
                 style={styles.chartStyle}
-                withHorizontalLabels={false}
               />
             </View>
 
@@ -243,7 +236,7 @@ export default function HealthSummaryScreen() {
             data={{
               labels: weekLabels,
               datasets: [
-                { data: momData?.map((item) => item.resting_heart_rate) ?? [0] },
+                { data: momData?.map((item) => item.resting_heart_rate) ?? [0] }, // 用真实数据
               ],
             }}
             width={screenWidth * 0.9}
@@ -251,8 +244,6 @@ export default function HealthSummaryScreen() {
             chartConfig={chartConfig}
             style={styles.chartStyle}
             bezier
-            withDots={false}
-            withInnerLines={false}
           />
         </View>
 
@@ -267,7 +258,7 @@ export default function HealthSummaryScreen() {
             data={{
               labels: weekLabels,
               datasets: [
-                { data: momData?.map((item) => item.sleep_hours) ?? [0] },
+                { data: momData?.map((item) => item.sleep_hours) ?? [0] }, // 用真实数据
               ],
             }}
             width={screenWidth * 0.9}
@@ -275,8 +266,6 @@ export default function HealthSummaryScreen() {
             chartConfig={chartConfig}
             style={styles.chartStyle}
             bezier
-            withDots={false}
-            withInnerLines={false}
           />
         </View>
 
@@ -291,7 +280,7 @@ export default function HealthSummaryScreen() {
             data={{
               labels: weekLabels,
               datasets: [
-                { data: momData?.map((item) => item.hrv) ?? [0] },
+                { data: momData?.map((item) => item.hrv) ?? [0] }, // 用真实数据
               ],
             }}
             width={screenWidth * 0.9}
@@ -299,8 +288,6 @@ export default function HealthSummaryScreen() {
             chartConfig={chartConfig}
             style={styles.chartStyle}
             bezier
-            withDots={false}
-            withInnerLines={false}
           />
 
         </View>
@@ -314,7 +301,7 @@ export default function HealthSummaryScreen() {
             data={{
               labels: weekLabels,
               datasets: [
-                { data: momData?.map((item) => item.steps) ?? [0] },
+                { data: momData?.map((item) => item.steps) ?? [0] }, // 用真实数据
               ],
             }}
             width={screenWidth * 0.9}
@@ -322,8 +309,6 @@ export default function HealthSummaryScreen() {
             chartConfig={chartConfig}
             style={styles.chartStyle}
             bezier
-            withDots={false}
-            withInnerLines={false}
           />
         </View>
 
@@ -337,7 +322,7 @@ export default function HealthSummaryScreen() {
             data={{
               labels: weekLabels,
               datasets: [
-                { data: momData?.map((item) => item.resting_heart_rate) ?? [0] },
+                { data: momData?.map((item) => item.resting_heart_rate) ?? [0] }, // 用真实数据
               ],
             }}
             width={screenWidth * 0.9}
@@ -345,8 +330,6 @@ export default function HealthSummaryScreen() {
             chartConfig={chartConfig}
             style={styles.chartStyle}
             bezier
-            withDots={false}
-            withInnerLines={false}
           />
         </View>
         
@@ -360,7 +343,7 @@ export default function HealthSummaryScreen() {
             data={{
               labels: weekLabels,
               datasets: [
-                { data: momData?.map((item) => item.calories_burned) ?? [0] },
+                { data: momData?.map((item) => item.calories_burned) ?? [0] }, // 用真实数据
               ],
             }}
             width={screenWidth * 0.9}
@@ -368,8 +351,6 @@ export default function HealthSummaryScreen() {
             chartConfig={chartConfig}
             style={styles.chartStyle}
             bezier
-            withDots={false}
-            withInnerLines={false}
           />
         </View>
 
@@ -393,7 +374,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginLeft: 16,
     marginTop: 16,
-    marginBottom: 0,
+    marginBottom: 4,
   },
 
   card: {

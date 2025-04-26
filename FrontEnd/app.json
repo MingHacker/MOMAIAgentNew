@@ -16,8 +16,8 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.anonymous.mytestapp",
       "infoPlist": {
-        "NSCameraUsageDescription": "需要使用摄像头上传宝宝图片",
-        "NSPhotoLibraryUsageDescription": "需要访问相册上传宝宝图片"
+        "NSCameraUsageDescription": "Camera access is needed to upload baby photos",
+        "NSPhotoLibraryUsageDescription": "Photo library access is needed to upload baby photos"
       }
     },
     "android": {

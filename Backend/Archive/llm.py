@@ -6,43 +6,43 @@ client = OpenAI()
 
 def call_gpt_json(prompt: str) -> dict:
     try:
-        print("📨 正在调用 GPT...")
+        print("📨 Calling GPT...")
         print("📝 Prompt:", prompt)
         
         response = client.chat.completions.create(
             model="gpt-4",
             messages=[
-                {"role": "system", "content": "你是一个善于将任务结构化的生活助理，只返回 JSON 格式的任务列表"},
+                {"role": "system", "content": "You are a life assistant skilled at structuring tasks, only return task lists in JSON format"},
                 {"role": "user", "content": prompt}
             ],
             temperature=0.3
         )
 
         content = response.choices[0].message.content
-        print("📬 GPT 回复内容:", content)
+        print("📬 GPT response:", content)
 
         # 提取 JSON（只保留可能是 JSON 的部分）
         json_start = content.find("{")
         if json_start == -1:
-            print("❌ 未找到 JSON 内容")
+            print("❌ No JSON content found")
             return {"tasks": []}
             
         json_str = content[json_start:]
         try:
             result = json.loads(json_str)
             if "tasks" not in result:
-                print("❌ 返回结果缺少 tasks 字段")
+                print("❌ Response missing 'tasks' field")
                 return {"tasks": []}
             return result
         except json.JSONDecodeError as e:
-            print("❌ JSON 解析失败:", str(e))
+            print("❌ JSON parse failed:", str(e))
             return {"tasks": []}
 
     except Exception as e:
-        print("❌ GPT 调用失败:", str(e))
+        print("❌ GPT call failed:", str(e))
         return {"tasks": []}
 #def call_gpt_json(prompt: str) -> Dict:
-#    print("🧠 模拟调用 GPT Prompt:\n", prompt)
+#    print("🧠 Simulating GPT call with prompt:\n", prompt)
 #    return {
 #        "tasks": [
 #            {

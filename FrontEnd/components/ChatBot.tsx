@@ -112,6 +112,10 @@ const ChatBot = () => {
         });
         pan.setValue({ x: 0, y: 0 });
       },
+      onPanResponderTerminationRequest: () => true,
+      onPanResponderTerminate: () => {
+        pan.setValue({ x: 0, y: 0 });
+      }
     })
   ).current;
 
@@ -427,7 +431,6 @@ const ChatBot = () => {
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           style={styles.keyboardAvoidView}
-          keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
         >
           <View style={styles.modalOverlay}>
             <TouchableOpacity 
@@ -435,7 +438,7 @@ const ChatBot = () => {
               activeOpacity={1} 
               onPress={handleModalClose}
             />
-            <View style={styles.dialog}>
+            <View style={styles.chatContainer}>
               <View style={styles.header}>
                 <View style={styles.headerContent}>
                   {renderBotIcon('header')}
@@ -516,35 +519,11 @@ const ChatBot = () => {
 };
 
 const styles = StyleSheet.create({
-  container: {
-    position: 'absolute',
-    bottom: 0,
-    right: 0,
-    left: 0,
-    marginTop: 120,
-    paddingBottom: Platform.OS === 'ios' ? 40 : 20,
-  },
-  dialog: {
-    backgroundColor: '#fff',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    paddingTop: 16,
-    paddingHorizontal: 16,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: -2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 5,
-    height: Platform.OS === 'ios' ? height * 0.6 : height * 0.65,
-  },
   floatingButton: {
     position: 'absolute',
-    width: 68,
-    height: 68,
-    borderRadius: 34,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
     backgroundColor: '#fff',
     justifyContent: 'center',
     alignItems: 'center',
@@ -562,9 +541,18 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.3)',
     justifyContent: 'flex-end',
+    paddingBottom: 20,
   },
   modalDismissArea: {
     flex: 1,
+  },
+  chatContainer: {
+    height: Platform.OS === 'ios' ? height * 0.5 : height * 0.55,
+    backgroundColor: '#fff',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    overflow: 'hidden',
+    marginBottom: 20,
   },
   header: {
     flexDirection: 'row',
@@ -573,30 +561,29 @@ const styles = StyleSheet.create({
     padding: 16,
     borderBottomWidth: 1,
     borderBottomColor: '#f0f0f0',
-    height: 65,
   },
   headerContent: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   headerText: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: '600',
     color: '#8B5CF6',
     marginLeft: 8,
   },
   quickBubblesContainer: {
-    padding: 12,
+    padding: 8,
     borderBottomWidth: 1,
     borderBottomColor: '#f0f0f0',
-    height: 105,
+    maxHeight: 80,
   },
   quickBubble: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#F3E8FF',
-    padding: 16,
+    padding: 12,
     borderRadius: 40,
     margin: 4,
     minWidth: '45%',
@@ -611,14 +598,13 @@ const styles = StyleSheet.create({
   },
   quickBubbleText: {
     color: '#8B5CF6',
-    fontSize: 16,
+    fontSize: 14,
     fontFamily: Platform.OS === 'ios' ? 'SF Pro Rounded' : 'Roboto',
   },
   messagesContainer: {
     flex: 1,
-    padding: 16,
+    padding: 12,
     backgroundColor: '#fff',
-    minHeight: Platform.OS === 'ios' ? height * 0.25 : height * 0.3,
   },
   messagesList: {
     paddingBottom: 16,
@@ -641,8 +627,7 @@ const styles = StyleSheet.create({
   },
   messageText: {
     color: '#4C3575',
-    fontSize: 16,
-    lineHeight: 22,
+    fontSize: 15,
     fontFamily: Platform.OS === 'ios' ? 'SF Pro Rounded' : 'Roboto',
   },
   timestamp: {
@@ -658,22 +643,21 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: '#f0f0f0',
     backgroundColor: '#fff',
-    height: 65,
   },
+  
   input: {
     flex: 1,
-    height: 46,
+    height: 50,
     backgroundColor: '#F3E8FF',
-    borderRadius: 23,
+    borderRadius: 20,
     paddingHorizontal: 16,
     marginRight: 8,
     color: '#4C3575',
-    fontSize: 16,
   },
   sendButton: {
-    width: 46,
-    height: 46,
-    borderRadius: 23,
+    width: 50,
+    height: 50,
+    borderRadius: 40,
     backgroundColor: '#F3E8FF',
     justifyContent: 'center',
     alignItems: 'center',
@@ -696,13 +680,13 @@ const styles = StyleSheet.create({
     backgroundColor: '#FF4B4B',
   },
   customFloatingIcon: {
-    width: 56,
-    height: 56,
+    width: 48,
+    height: 48,
     margin: 0,
   },
   customHeaderIcon: {
-    width: 40,
-    height: 40,
+    width: 32,
+    height: 32,
     marginRight: 8,
   },
   loadMoreButton: {

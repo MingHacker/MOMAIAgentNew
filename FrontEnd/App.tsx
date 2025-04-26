@@ -13,6 +13,7 @@ import 'react-native-gesture-handler';
 import 'react-native-reanimated';
 import ChatBot from './components/ChatBot';
 import { DrawerContentScrollView, DrawerItemList, DrawerContentComponentProps } from '@react-navigation/drawer';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 // Screens
 import DashboardScreen from './screens/DashBoardScreen';
@@ -22,7 +23,6 @@ import HealthSummaryScreen from './screens/SummaryScreen';
 import InitialInfoScreen from './screens/InitialInfoScreen';
 import LoginScreen from './screens/LoginScreen';
 import WelcomeScreen from './screens/WelcomeScreen';
-import EntryScreen from './screens/EntryScreen';
 import BabyProfileScreen from './screens/BabyProfileScreen';
 import RecommendedFeaturesScreen from './screens/RecommandFeatureScreen';
 import TimelineScreen from './screens/TimelineScreen';
@@ -285,8 +285,9 @@ export default function App() {
   return (
     <AuthContext.Provider value={{ isAuthenticated, login, logout }}>
       <GestureHandlerRootView style={{ flex: 1 }}>
-        <NavigationContainer>
-          <Stack.Navigator screenOptions={{ headerShown: false }}>
+        <SafeAreaProvider>
+          <NavigationContainer>
+            <Stack.Navigator screenOptions={{ headerShown: false }}>
             {!isAuthenticated ? (
               <>
                 <Stack.Screen name="Welcome" component={WelcomeScreen} />
@@ -297,9 +298,10 @@ export default function App() {
             ) : (
               <Stack.Screen name="Main" component={DrawerNavigator} />
             )}
-          </Stack.Navigator>
-          {isAuthenticated && <ChatBot />}
-        </NavigationContainer>
+            </Stack.Navigator>
+            {isAuthenticated && <ChatBot />}
+          </NavigationContainer>
+        </SafeAreaProvider>
       </GestureHandlerRootView>
     </AuthContext.Provider>
   );

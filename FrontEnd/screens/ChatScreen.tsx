@@ -16,8 +16,7 @@ import {
 import * as ImagePicker from 'expo-image-picker';
 import axios from 'axios';
 import { OPENAI_API_KEY } from '@env';
-
-
+import { SafeAreaView } from 'react-native-safe-area-context'; // Import SafeAreaView
 
 export default function QAScreen() {
   const [question, setQuestion] = useState('');
@@ -99,58 +98,58 @@ export default function QAScreen() {
   ];
 
   return (
-    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        style={{ flex: 1 }}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 80 : 0}
-      >
-        <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
-       
+    <SafeAreaView style={[styles.safeArea, { paddingBottom: 30 }]}> {/* Wrap the entire screen with SafeAreaView */}
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          style={{ flex: 1 }}
+          keyboardVerticalOffset={Platform.OS === 'ios' ? 80 : 0}
+        >
+          <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
+            <View style={styles.chatBubbleWrap}>
+              {submitted && answer !== '' && (
+                <View style={styles.answerBubble}>
+                  <Text style={styles.answerText}>{answer}</Text>
+                </View>
+              )}
+            </View>
 
-          <View style={styles.chatBubbleWrap}>
-            {submitted && answer !== '' && (
-              <View style={styles.answerBubble}>
-                <Text style={styles.answerText}>{answer}</Text>
+            <View style={styles.inputArea}>
+              <TextInput
+                style={styles.input}
+                placeholder="Ask anything..."
+                value={question}
+                onChangeText={setQuestion}
+                multiline
+              />
+
+              <View style={styles.quickRow}>
+                {suggestions.map((item) => (
+                  <TouchableOpacity
+                    key={item}
+                    style={styles.tag}
+                    onPress={() => setQuestion(item)}>
+                    <Text style={styles.tagText}>{item}</Text>
+                  </TouchableOpacity>
+                ))}
               </View>
-            )}
-          </View>
 
-          <View style={styles.inputArea}>
-            <TextInput
-              style={styles.input}
-              placeholder="Ask anything..."
-              value={question}
-              onChangeText={setQuestion}
-              multiline
-            />
-
-            <View style={styles.quickRow}>
-              {suggestions.map((item) => (
-                <TouchableOpacity
-                  key={item}
-                  style={styles.tag}
-                  onPress={() => setQuestion(item)}>
-                  <Text style={styles.tagText}>{item}</Text>
+              <View style={styles.bottomButtons}>
+                <TouchableOpacity onPress={pickImage} style={styles.iconButton}>
+                  <Text style={styles.iconButtonText}>＋ Image</Text>
                 </TouchableOpacity>
-              ))}
-            </View>
+                <TouchableOpacity onPress={askOpenAIVision} style={styles.sendButtonSoft}>
+                  <Text style={styles.sendButtonSoftText}>Submit</Text>
+                </TouchableOpacity>
+              </View>
 
-            <View style={styles.bottomButtons}>
-              <TouchableOpacity onPress={pickImage} style={styles.iconButton}>
-                <Text style={styles.iconButtonText}>＋ Image</Text>
-              </TouchableOpacity>
-              <TouchableOpacity onPress={askOpenAIVision} style={styles.sendButtonSoft}>
-                <Text style={styles.sendButtonSoftText}>Submit</Text>
-              </TouchableOpacity>
+              {imageUri && <Image source={{ uri: imageUri }} style={styles.preview} />}
+              {loading && <ActivityIndicator size="large" color="#999" style={{ marginTop: 20 }} />}
             </View>
-
-            {imageUri && <Image source={{ uri: imageUri }} style={styles.preview} />}
-            {loading && <ActivityIndicator size="large" color="#999" style={{ marginTop: 20 }} />}
-          </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
-    </TouchableWithoutFeedback>
+          </ScrollView>
+        </KeyboardAvoidingView>
+      </TouchableWithoutFeedback>
+    </SafeAreaView>
   );
 }
 
@@ -158,21 +157,21 @@ const styles = StyleSheet.create({
   container: {
     backgroundColor: '#FAFAF8',
     padding: 20,
-    paddingTop: 20,
+    paddingTop: 40,
     flexGrow: 1,
-    paddingBottom: Platform.OS === 'ios' ? 140 : 120,
   },
+  safeArea: { flex: 1, backgroundColor: '#fff' },
   title: {
     fontSize: 20,
     fontWeight: '600',
-    marginBottom: 8,
+    marginBottom: 12,
     textAlign: 'center',
     color: '#4B5563',
     fontFamily: 'System',
   },
   inputArea: {
-    marginTop: 0,
-    marginBottom: Platform.OS === 'ios' ? 40 : 30,
+    marginTop: 10,
+    marginBottom: 10,
     backgroundColor: '#fff',
     borderRadius: 24,
     padding: 16,
@@ -217,7 +216,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     marginTop: 10,
-    marginBottom: Platform.OS === 'ios' ? 10 : 5,
   },
   iconButton: {
     backgroundColor: '#F3F4F6',
@@ -247,8 +245,8 @@ const styles = StyleSheet.create({
     marginTop: 16,
   },
   chatBubbleWrap: {
-    marginBottom: 12,
-    minHeight: '25%',
+    marginBottom: 16,
+    minHeight: '30%',
     justifyContent: 'flex-start',
   },
   answerBubble: {
@@ -263,22 +261,5 @@ const styles = StyleSheet.create({
     color: '#333',
     lineHeight: 26,
     fontFamily: 'System',
-  },
-  submitButton: {
-    position: 'absolute',
-    bottom: Platform.OS === 'ios' ? 100 : 80,
-    alignSelf: 'center',
-    backgroundColor: '#8B5CF6',
-    paddingHorizontal: 32,
-    paddingVertical: 12,
-    borderRadius: 25,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
   },
 });

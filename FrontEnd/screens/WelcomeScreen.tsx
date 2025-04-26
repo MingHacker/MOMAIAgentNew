@@ -58,11 +58,12 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'space-between',
     paddingHorizontal: 30,
-    paddingTop: '40%',
-    paddingBottom: 60,
+    paddingTop: '30%',
+    paddingBottom: 100,
   },
   textContainer: {
     alignItems: 'center',
+    marginTop: 60,
   },
   title: {
     fontSize: 32,

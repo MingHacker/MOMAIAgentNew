@@ -111,22 +111,48 @@ def get_today_mom_summary(user_id: str = Depends(get_current_user)):
 @router.get("/api/mom/onesentence", response_model=MomOneSentenceResponse, status_code=status.HTTP_200_OK)
 def get_today_mom_onesentence(user_id: str = Depends(get_current_user)):
     try:
+        # 1. 获取妈妈的健康数据
         data = get_mom_health_today(user_id, supabase)
-        print(f"获取到的健康数据：{data}")
+        print(f"1. 获取到的健康数据：{data}")
         
-        if not data.get("success"):
-            return JSONResponse(
-                status_code=500,
-                content={"success": False, "onesentence": data.get("message", "获取健康数据失败")}
-            )
-            
+        # 2. 如果没有健康数据，从 mom_sentences 表获取模板消息
+        if not data.get("success") or not data.get("data"):
+            try:
+                # 获取妈妈的名字
+                mom_profile = supabase.table("mom_profiles") \
+                    .select("display_name") \
+                    .eq("id", user_id) \
+                    .single() \
+                    .execute()
+                print(f"2. 获取到的妈妈资料：{mom_profile.data}")
+                
+                mom_name = mom_profile.data.get("display_name", "Mom")
+                print(f"3. 妈妈名字：{mom_name}")
+                
+                # 从 mom_sentences 表随机获取一条模板消息
+                template_result = supabase.table("mom_sentences") \
+                    .select("message_template") \
+                    .order("id", desc=False) \
+                    .limit(1) \
+                    .execute()
+                print(f"4. 获取到的模板消息：{template_result.data}")
+                
+                if template_result.data and len(template_result.data) > 0:
+                    # 替换模板中的 {name} 为妈妈的名字
+                    message = template_result.data[0]["message_template"].replace("{name}", mom_name)
+                    print(f"5. 替换后的消息：{message}")
+                    return {"success": True, "onesentence": message}
+                
+                print("6. 没有找到模板消息，使用默认消息")
+                # 如果连模板消息都没有，返回一个默认的鼓励消息
+                return {"success": True, "onesentence": f"Hey {mom_name}, you're doing great! Keep going! 💪"}
+                
+            except Exception as template_error:
+                print(f"7. 获取模板消息时发生错误：{str(template_error)}")
+                return {"success": True, "onesentence": "You're doing great! Keep going! 💪"}
+        
+        # 3. 如果有健康数据，使用原有的 GPT 分析逻辑
         health_data = data.get("data", {})
-        if not health_data:
-            return JSONResponse(
-                status_code=500,
-                content={"success": False, "onesentence": "没有找到健康数据"}
-            )
-        
         prompt_input = {
             "hrv": health_data.get("hrv"),
             "sleep": health_data.get("sleep_hours"),
@@ -135,12 +161,16 @@ def get_today_mom_onesentence(user_id: str = Depends(get_current_user)):
             "breathing_rate": health_data.get("breathing_rate"),
             "mood": health_data.get("mood"),
         }
-        print(f"发送给 GPT 的数据：{prompt_input}")
+        print(f"8. 发送给 GPT 的数据：{prompt_input}")
+        
         analysis = call_gpt_mom_onesentence(prompt_input)
+        print(f"9. GPT 返回的分析：{analysis}")
         return {"success": True, "onesentence": analysis}
+        
     except Exception as e:
-        print(f"发生错误：{str(e)}")
-        return JSONResponse(status_code=500, content={"success": False, "onesentence": str(e)})
+        print(f"10. 发生错误：{str(e)}")
+        # 确保即使发生错误也返回一个有效的消息
+        return {"success": True, "onesentence": "You're doing great! Keep going! 💪"}
     
 
 ######### ✅ 2. 每日健康数据（图表卡片用）

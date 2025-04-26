@@ -55,10 +55,18 @@ export default function MomStatusCard() {
   if (error || !healthData) {
     return (
       <View style={styles.card}>
-        <Text style={styles.moodText}>🌸 Data not available today</Text>
-        <TouchableOpacity onPress={fetchHealthData} style={styles.retryButton}>
-          <Text style={styles.retryText}>Tap to refresh</Text>
-        </TouchableOpacity>
+        <View style={styles.row}>
+          <View style={styles.left}>
+            <Text style={styles.moodText}>🌸 Be gentle with yourself today</Text>
+          </View>
+          <View style={styles.right}>
+            <View style={styles.dataStack}>
+              <Text style={styles.dataItem}>💓 HRV: --</Text>
+              <Text style={styles.dataItem}>💤 Sleep: --</Text>
+              <Text style={styles.dataItem}>🚶 Steps: --</Text>
+            </View>
+          </View>
+        </View>
       </View>
     );
   }
@@ -79,9 +87,9 @@ export default function MomStatusCard() {
         {/* 右边垂直数据列表 */}
         <View style={styles.right}>
           <View style={styles.dataStack}>
-            <Text style={styles.dataItem}>💓 HRV: {healthData.hrv || 0}</Text>
-            <Text style={styles.dataItem}>💤 Sleep: {(healthData.sleep_hours || 0).toFixed(1)}h</Text>
-            <Text style={styles.dataItem}>🚶 Steps: {healthData.steps || 0}</Text>
+            <Text style={styles.dataItem}>💓 HRV: {healthData.hrv}</Text>
+            <Text style={styles.dataItem}>💤 Sleep: {healthData.sleep_hours ? `${healthData.sleep_hours.toFixed(1)}h` : '0h'}</Text>
+            <Text style={styles.dataItem}>🚶 Steps: {healthData.steps}</Text>
           </View>
         </View>
       </View>
@@ -146,5 +154,15 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#8B5CF6',
     textAlign: 'center',
+  },
+  fallbackText: {
+    fontSize: 13,
+    color: '#8B5CF6',
+    fontFamily: Platform.select({
+      ios: 'AvenirNextRounded-Regular',
+      android: 'sans-serif-light',
+    }),
+    marginTop: 8,
+    lineHeight: 18,
   },
 });

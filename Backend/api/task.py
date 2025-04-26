@@ -105,7 +105,7 @@ def save_task(request: SaveTaskRequest, user_id: str = Depends(get_current_user)
     category = detect_task_category(request.main_task.text)
 
         # 👉 Insert main task and get generated task_id
-    main_insert = supabase.client.table("tasks").insert({
+    main_insert = supabase.client.table("tasks").upsert({
         "task_id": request.main_task.id,
         "mom_id": user_id,
         "title": request.main_task.text,

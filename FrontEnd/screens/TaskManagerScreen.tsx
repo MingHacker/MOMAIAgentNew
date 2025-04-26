@@ -83,6 +83,10 @@ interface SuggestedItem {
   selected: boolean;
 }
 
+const generateUniqueId = () => {
+  return uuidv4();
+};
+
 export default function TaskManagerScreen() {
   const [taskText, setTaskText] = useState('');
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -92,6 +96,7 @@ export default function TaskManagerScreen() {
   const [subTaskSuggestions, setSubTaskSuggestions] = useState<SuggestedItem[]>([]);
   const [confirmClearVisible, setConfirmClearVisible] = useState(false);
   const [filter, setFilter] = useState('all');
+  const [isAdding, setIsAdding] = useState(false);
 
 
   const getSuggestionsAndCategory = async (mainTaskText: string) => {
@@ -100,15 +105,16 @@ export default function TaskManagerScreen() {
   };
 
   const addTask = async () => {
-    if (!taskText.trim()) return;
+    if (!taskText.trim() || isAdding) return;
     
+    setIsAdding(true);
     try {
       const { category, suggestions } = await getSuggestionsAndCategory(taskText);
 
       const newTask: Task = {
-        id: uuidv4(),
+        id: generateUniqueId(),
         text: taskText,
-        type: category,
+        type: category || 'Other',
         done: false,
         subTasks: [],
         title: taskText,
@@ -117,16 +123,20 @@ export default function TaskManagerScreen() {
         completed: false,
       };
 
-      setTasks([newTask, ...tasks]);
-      setSubTaskSuggestions(suggestions);
+      // 先保存主任务
+      await submitTaskToBackend(newTask);
+
+      setTasks(prevTasks => [newTask, ...prevTasks]);
+      setSubTaskSuggestions(suggestions || []);
       setCurrentTaskId(newTask.id);
       setSubTaskModalVisible(true);
       setTaskText('');
+      setSubTaskText('');
     } catch (error) {
       console.error('添加任务失败:', error);
       // 即使获取建议失败，也添加任务
       const newTask: Task = {
-        id: uuidv4(),
+        id: generateUniqueId(),
         text: taskText,
         type: 'Other',
         done: false,
@@ -136,8 +146,12 @@ export default function TaskManagerScreen() {
         created_at: DateTime.now().toISO()!,
         completed: false,
       };
-      setTasks([newTask, ...tasks]);
+
+      setTasks(prevTasks => [newTask, ...prevTasks]);
       setTaskText('');
+      setSubTaskText('');
+    } finally {
+      setIsAdding(false);
     }
   };
 
@@ -148,6 +162,8 @@ export default function TaskManagerScreen() {
   const openSubTaskModal = (taskId: string) => {
     setCurrentTaskId(taskId);
     setSubTaskText('');
+    // 重置所有建议的选中状态
+    setSubTaskSuggestions(prev => prev.map(item => ({ ...item, selected: false })));
     setSubTaskModalVisible(true);
   };
 
@@ -159,14 +175,48 @@ export default function TaskManagerScreen() {
 
   const submitTaskToBackend = async (task: Task) => {
     try {
-      const result = await axiosInstance.post('/api/task/save', {
-        main_task: task,
-        sub_tasks: task.subTasks,
-      });
-      console.log('✅ 已成功保存任务与子任务');
-      console.log(result)
-    } catch (err) {
-      console.error('❌ 保存任务失败:', err);
+      // 准备发送到后端的数据
+      const taskData = {
+        main_task: {
+          id: task.id,
+          text: task.text,
+          type: task.type || 'Other',
+          done: task.done,
+          title: task.title || task.text,
+          description: task.description || '',
+          created_at: task.created_at,
+          completed: task.completed
+        },
+        sub_tasks: task.subTasks.map(subTask => ({
+          id: subTask.id,
+          text: subTask.text,
+          done: subTask.done,
+          main_task_id: task.id
+        }))
+      };
+
+      console.log('Saving task to backend:', JSON.stringify(taskData, null, 2));
+      
+      const result = await axiosInstance.post('/api/task/save', taskData);
+      
+      if (result.data && result.data.success) {
+        console.log('✅ Task saved successfully:', result.data);
+      } else {
+        console.error('❌ Failed to save task:', result.data);
+        throw new Error(result.data?.message || 'Failed to save task');
+      }
+    } catch (error: any) {
+      console.error('❌ Error saving task:', error);
+      if (error.response) {
+        console.error('Response data:', error.response.data);
+        console.error('Response status:', error.response.status);
+        console.error('Response headers:', error.response.headers);
+      } else if (error.request) {
+        console.error('Request error:', error.request);
+      } else {
+        console.error('Error message:', error.message);
+      }
+      throw error;
     }
   };
 
@@ -175,12 +225,12 @@ export default function TaskManagerScreen() {
     const newSubTasks: SubTask[] = [];
 
     if (subTaskText.trim()) {
-      newSubTasks.push({ id: uuidv4(), text: subTaskText.trim(), done: false });
+      newSubTasks.push({ id: generateUniqueId(), text: subTaskText.trim(), done: false });
     }
 
     const selectedSuggestions = subTaskSuggestions.filter((s) => s.selected);
     selectedSuggestions.forEach((sug) => {
-      newSubTasks.push({ id: uuidv4(), text: sug.text, done: false });
+      newSubTasks.push({ id: generateUniqueId(), text: sug.text, done: false });
     });
 
     const updatedTasks = tasks.map((task) =>
@@ -190,10 +240,17 @@ export default function TaskManagerScreen() {
     );
     setTasks(updatedTasks);
     setSubTaskModalVisible(false);
+    setSubTaskText('');
+    setSubTaskSuggestions(prev => prev.map(item => ({ ...item, selected: false })));
 
     const currentTask = updatedTasks.find((t) => t.id === currentTaskId);
     if (currentTask) {
-      await submitTaskToBackend(currentTask);
+      try {
+        await submitTaskToBackend(currentTask);
+      } catch (error) {
+        console.error('Failed to save task with subtasks:', error);
+        // 可以在这里添加错误提示UI
+      }
     }
   };
 
@@ -217,7 +274,7 @@ export default function TaskManagerScreen() {
           const updatedSubs = task.subTasks.map((st) =>
             st.id === subTaskId ? { ...st, done: !st.done } : st
           );
-          updateTaskStatus(task.text, updatedSubs, task.done); // ✅ 自动触发更新
+          updateTaskStatus(taskId, updatedSubs, task.done);
           return { ...task, subTasks: updatedSubs };
         }
         return task;
@@ -313,140 +370,161 @@ export default function TaskManagerScreen() {
 
   // ================== UI 渲染 ===================
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}
-      >
-        <View style={styles.container}>
+    <View style={styles.rootContainer}>
+      <SafeAreaView style={styles.safeArea}>
+        <KeyboardAvoidingView
+          style={styles.keyboardAvoidingView}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}
+        >
+          <View style={styles.container}>
+            {/* 这块如果你需要分类卡片，也可再写renderCategoryCard之类的 */}
+            <View style={styles.cardRow}>
+              {renderCategoryCard('Health', 'Health', '#E0F2F1')}
+              {renderCategoryCard('Family', 'Family', '#F3E5F5')}
+              {renderCategoryCard('Baby', 'Baby', '#FEF3C7')}
+              {renderCategoryCard('Other', 'Other', '#EDE9FE')}
+            </View> 
 
-          {/* 这块如果你需要分类卡片，也可再写renderCategoryCard之类的 */}
-          <View style={styles.cardRow}>
-            {renderCategoryCard('Health', 'Health', '#E0F2F1')}
-            {renderCategoryCard('Family', 'Family', '#F3E5F5')}
-            {renderCategoryCard('Baby', 'Baby', '#FEF3C7')}
-            {renderCategoryCard('Other', 'Other', '#EDE9FE')}
-          </View> 
-
-          <FlatList
-            data={tasks}
-            renderItem={renderTask}
-            keyExtractor={(item) => item.id}
-            contentContainerStyle={{ paddingBottom: 20 }}
-          />
-
-          <TouchableOpacity style={styles.fabButton} onPress={() => setConfirmClearVisible(true)}>
-            <Text style={styles.fabText}>-</Text>
-          </TouchableOpacity>
-
-          <Modal
-            visible={confirmClearVisible}
-            transparent
-            animationType="fade"
-            onRequestClose={() => setConfirmClearVisible(false)}
-          >
-            <View style={styles.modalBackground}>
-              <View style={styles.modalContainer}>
-                <Text style={styles.modalTitle}>Confirm Clear</Text>
-                <Text style={{ marginBottom: 16 }}>Are you sure you want to delete all completed tasks? This action cannot be undone.</Text>
-
-                <View style={styles.modalButtonRow}>
-                  <TouchableOpacity
-                    style={[styles.modalButton, { backgroundColor: '#ccc' }]}
-                    onPress={() => setConfirmClearVisible(false)}
-                  >
-                    <Text style={styles.modalButtonText}>Cancel</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={[styles.modalButton, { backgroundColor: '#F44336' }]}
-                    onPress={() => {
-                      clearCompletedTasks();
-                      setConfirmClearVisible(false);
-                    }}
-                  >
-                    <Text style={styles.modalButtonText}>Confirm</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-            </View>
-          </Modal>
-
-          {/* 底部输入栏：添加主任务 */}
-          <View style={styles.inputRow}>
-            <TextInput
-              style={styles.input}
-              placeholder="Add Main Task..."
-              value={taskText}
-              onChangeText={setTaskText}
+            <FlatList
+              data={tasks}
+              renderItem={renderTask}
+              keyExtractor={(item) => item.id}
+              contentContainerStyle={{ paddingBottom: 20 }}
             />
-            <TouchableOpacity style={styles.addButton} onPress={addTask}>
-              <Text style={styles.addText}>Add</Text>
+
+            <TouchableOpacity style={styles.fabButton} onPress={() => setConfirmClearVisible(true)}>
+              <Text style={styles.fabText}>-</Text>
             </TouchableOpacity>
-          </View>
 
-          {/* Modal：添加子任务 */}
-          <Modal
-            visible={isSubTaskModalVisible}
-            transparent
-            animationType="slide"
-            onRequestClose={() => setSubTaskModalVisible(false)}
-          >
-            <View style={styles.modalBackground}>
-              <View style={styles.modalContainer}>
-                <Text style={styles.modalTitle}>Add Sub Task</Text>
+            <Modal
+              visible={confirmClearVisible}
+              transparent
+              animationType="fade"
+              onRequestClose={() => setConfirmClearVisible(false)}
+            >
+              <View style={styles.modalBackground}>
+                <View style={styles.modalContainer}>
+                  <Text style={styles.modalTitle}>Confirm Clear</Text>
+                  <Text style={{ marginBottom: 16 }}>Are you sure you want to delete all completed tasks? This action cannot be undone.</Text>
 
-                {/* 1) DeepSeek Suggested Sub Tasks */}
-                <View style={styles.suggestionContainer}>
-                  {subTaskSuggestions.map((item, index) => (
+                  <View style={styles.modalButtonRow}>
                     <TouchableOpacity
-                      key={index}
-                      style={[
-                        styles.suggestionBubble,
-                        item.selected && styles.suggestionBubbleSelected,
-                      ]}
-                      onPress={() => toggleSuggestionSelected(index)}
+                      style={[styles.modalButton, { backgroundColor: '#ccc' }]}
+                      onPress={() => setConfirmClearVisible(false)}
                     >
-                      <Text>{item.text}</Text>
+                      <Text style={styles.modalButtonText}>Cancel</Text>
                     </TouchableOpacity>
-                  ))}
-                </View>
-
-                {/* 2) Manual Input Sub Task */}
-                <TextInput
-                  style={styles.subTaskInput}
-                  placeholder="Or enter sub task here..."
-                  value={subTaskText}
-                  onChangeText={setSubTaskText}
-                />
-
-                {/* Button Row */}
-                <View style={styles.modalButtonRow}>
-                  <TouchableOpacity
-                    style={[styles.modalButton, { backgroundColor: '#ccc' }]}
-                    onPress={() => setSubTaskModalVisible(false)}
-                  >
-                    <Text style={styles.modalButtonText}>Cancel</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={[styles.modalButton, { backgroundColor: '#4CAF50' }]}
-                    onPress={addSubTask}
-                  >
-                    <Text style={styles.modalButtonText}>Confirm</Text>
-                  </TouchableOpacity>
+                    <TouchableOpacity
+                      style={[styles.modalButton, { backgroundColor: '#F44336' }]}
+                      onPress={() => {
+                        clearCompletedTasks();
+                        setConfirmClearVisible(false);
+                      }}
+                    >
+                      <Text style={styles.modalButtonText}>Confirm</Text>
+                    </TouchableOpacity>
+                  </View>
                 </View>
               </View>
+            </Modal>
+
+            {/* 底部输入栏：添加主任务 */}
+            <View style={styles.inputRow}>
+              <TextInput
+                style={styles.input}
+                placeholder="Add Main Task..."
+                value={taskText}
+                onChangeText={setTaskText}
+                editable={!isAdding}
+              />
+              <TouchableOpacity 
+                style={[styles.addButton, isAdding && styles.addButtonDisabled]} 
+                onPress={addTask}
+                disabled={isAdding}
+              >
+                <Text style={styles.addText}>{isAdding ? 'Adding...' : 'Add'}</Text>
+              </TouchableOpacity>
             </View>
-          </Modal>
-        </View>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+
+            {/* Modal：添加子任务 */}
+            <Modal
+              visible={isSubTaskModalVisible}
+              transparent
+              animationType="slide"
+              onRequestClose={() => setSubTaskModalVisible(false)}
+            >
+              <View style={styles.modalBackground}>
+                <View style={styles.modalContainer}>
+                  <Text style={styles.modalTitle}>Add Sub Task</Text>
+
+                  {/* 1) DeepSeek Suggested Sub Tasks */}
+                  <View style={styles.suggestionContainer}>
+                    {subTaskSuggestions.map((item, index) => (
+                      <TouchableOpacity
+                        key={index}
+                        style={[
+                          styles.suggestionBubble,
+                          item.selected && styles.suggestionBubbleSelected,
+                        ]}
+                        onPress={() => toggleSuggestionSelected(index)}
+                      >
+                        <Text>{item.text}</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+
+                  {/* 2) Manual Input Sub Task */}
+                  <TextInput
+                    style={styles.subTaskInput}
+                    placeholder="Or enter sub task here..."
+                    value={subTaskText}
+                    onChangeText={setSubTaskText}
+                  />
+
+                  {/* Button Row */}
+                  <View style={styles.modalButtonRow}>
+                    <TouchableOpacity
+                      style={[styles.modalButton, { backgroundColor: '#ccc' }]}
+                      onPress={() => setSubTaskModalVisible(false)}
+                    >
+                      <Text style={styles.modalButtonText}>Cancel</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={[styles.modalButton, { backgroundColor: '#4CAF50' }]}
+                      onPress={addSubTask}
+                    >
+                      <Text style={styles.modalButtonText}>Confirm</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              </View>
+            </Modal>
+          </View>
+        </KeyboardAvoidingView>
+      </SafeAreaView>
+    </View>
   );
 }
 
 // ==================== 样式 ====================
 const styles = StyleSheet.create({
+  rootContainer: {
+    flex: 1,
+    backgroundColor: '#fff',
+    position: 'relative',
+  },
   safeArea: {
+    flex: 1,
+    backgroundColor: '#fff',
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 999,
+  },
+  keyboardAvoidingView: {
     flex: 1,
     backgroundColor: '#fff',
   },
@@ -454,6 +532,7 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 20,
     paddingBottom: 20,
+    backgroundColor: '#fff',
   },
   title: {
     fontSize: 22,
@@ -499,12 +578,12 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     justifyContent: 'space-between',
     marginBottom: 20,
-    marginTop: 32,
+    marginTop: 20,
   },
   card: {
     width: '48%',
     borderRadius: 12,
-    padding: 20,
+    padding: 16,
     marginBottom: 12,
     elevation: 2,
   },
@@ -519,12 +598,12 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   cardCount: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: 'bold',
     color: '#666',
   },
   cardLabel: {
-    fontSize: 16,
+    fontSize: 14,
     color: '#555',
   },
   
@@ -612,6 +691,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderRadius: 8,
+  },
+  addButtonDisabled: {
+    backgroundColor: '#E5E7EB',
   },
   addText: {
     color: '#fff',

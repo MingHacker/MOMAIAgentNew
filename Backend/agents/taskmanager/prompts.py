@@ -18,30 +18,32 @@ def build_task_prompt(
 并**只用纯 JSON** 输出。
 然后再把主任务归类成Family, Health, Baby, Other 的其中一个类型，返回一个 JSON 对象，顶层字段必须是 "category"。
 
-【妈妈的自然语言输入】
+【Main task】
 “{input_text}”
 
-【妈妈健康状态】，没有有用信息就不采纳
+【Mom health status】, if there is no useful information, do not consider it
 {mom_health_status}
 
-【宝宝健康状态】，没有有用信息就不采纳
+【Baby health status】, if there is no useful information, do not consider it
 {baby_health_status}
 
 
 
 【输出格式要求】
-1. 仅返回一个 JSON 对象，顶层字段必须是 "tasks"。
-2. "tasks" 的值为数组，数组元素为对象，**仅含一个字段 "title"**，其值为任务标题字符串。
-3. 任务数量 1–4 条，根据输入内容和健康状态自行推断并按重要性排序。
-4. 不要输出除 JSON 之外的任何文字、解释或注释。
-
-**示例**  
-input：妈妈今天需要出门，返回下面任务：
+1. only return one JSON object, the top level field must be "tasks". return in english.
+2. the value of 'tasks' must be an arrawy, and each array element must be an object containing only one field 'title'.
+3. the number of tasks is 1–4, and should be sorted by importance based on the input content and health status.
+4. do not return any text, explanation or annotation except for the JSON.
+5. if the mom is going to shop, then return shopping related tasks, example: buy baby food, diapers, wipes. bring diaper etc.
+**Example**  
+input：going outisde with the baby，返回下面任务：
 {{
   "category": "Family",
   "tasks": [
-    {{"title": "准备宝宝的奶瓶"}},
-    {{"title": "准备宝宝尿不湿"}}
+    {{"title": "Bring water bottle"}},
+    {{"title": "Bring diaper"}},
+    {{"title": "Bring wipes"}},
+    {{"title": "Bring baby food"}}
   ]
 }}
 """

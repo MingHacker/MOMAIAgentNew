@@ -14,11 +14,10 @@ import {
 } from 'react-native';
 import 'react-native-get-random-values';
 import { v4 as uuidv4 } from 'uuid';
-import { getTaskSuggestionsFromBackend } from '../services/hooks/useTaskSuggestion';
 import Swipeable from 'react-native-gesture-handler/Swipeable';
-import axiosInstance from '../utils/axiosInstance';
 import { DateTime } from 'luxon';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { taskApi } from '../src/api'; // Import taskApi
 
 
 // 子任务类型
@@ -26,37 +25,6 @@ interface TaskUpdate {
   id: string;
   done: Boolean;
 }
-
-// ✅ 提交任务状态更新 API
-export const updateTaskStatus = async (
-  mainTaskId: string,
-  subTasks: TaskUpdate[],
-  done: boolean
-) => {
-  try {
-    const mainTaskUpdate: TaskUpdate = {
-      id: mainTaskId,
-      done: done
-    }
-
-    // const subs: TaskUpdate[] = []
-
-    // for(const sub of subTasks)
-    // {
-    //   subs.push({id: sub.id, done: sub.done})
-    // }
-
-    const res = await axiosInstance.post('/api/task/update', {
-      main_task: mainTaskUpdate,
-      sub_tasks: subTasks,
-    });
-    console.log('✅ 状态更新成功:', res.data);
-    return res.data;
-  } catch (err) {
-    console.error('❌ 状态更新失败:', err);
-    throw err;
-  }
-};
 
 // 子任务类型
 interface SubTask {
@@ -101,13 +69,13 @@ export default function TaskManagerScreen() {
 
 
   const getSuggestionsAndCategory = async (mainTaskText: string) => {
-    const { category, suggestions } = await getTaskSuggestionsFromBackend(mainTaskText);
+    const { category, suggestions } = await taskApi.getTaskSuggestionsFromBackend(mainTaskText);
     return { category, suggestions };
   };
 
   const addTask = async () => {
     if (!taskText.trim() || isAdding) return;
-    
+
     setIsAdding(true);
     try {
       const { category, suggestions } = await getSuggestionsAndCategory(taskText);
@@ -125,7 +93,7 @@ export default function TaskManagerScreen() {
       };
 
       // 先保存主任务
-      await submitTaskToBackend(newTask);
+      await taskApi.submitTaskToBackend(newTask); // Use taskApi
 
       setTasks(prevTasks => [newTask, ...prevTasks]);
       setSubTaskSuggestions(suggestions || []);
@@ -174,53 +142,6 @@ export default function TaskManagerScreen() {
     );
   };
 
-  const submitTaskToBackend = async (task: Task) => {
-    try {
-      // 准备发送到后端的数据
-      const taskData = {
-        main_task: {
-          id: task.id,
-          text: task.text,
-          type: task.type || 'Other',
-          done: task.done,
-          title: task.title || task.text,
-          description: task.description || '',
-          created_at: task.created_at,
-          completed: task.completed
-        },
-        sub_tasks: task.subTasks.map(subTask => ({
-          id: subTask.id,
-          text: subTask.text,
-          done: subTask.done,
-          main_task_id: task.id
-        }))
-      };
-
-      console.log('Saving task to backend:', JSON.stringify(taskData, null, 2));
-      
-      const result = await axiosInstance.post('/api/task/save', taskData);
-      
-      if (result.data && result.data.success) {
-        console.log('✅ Task saved successfully:', result.data);
-      } else {
-        console.error('❌ Failed to save task:', result.data);
-        throw new Error(result.data?.message || 'Failed to save task');
-      }
-    } catch (error: any) {
-      console.error('❌ Error saving task:', error);
-      if (error.response) {
-        console.error('Response data:', error.response.data);
-        console.error('Response status:', error.response.status);
-        console.error('Response headers:', error.response.headers);
-      } else if (error.request) {
-        console.error('Request error:', error.request);
-      } else {
-        console.error('Error message:', error.message);
-      }
-      throw error;
-    }
-  };
-
   const addSubTask = async () => {
     if (!currentTaskId) return;
     const newSubTasks: SubTask[] = [];
@@ -247,7 +168,7 @@ export default function TaskManagerScreen() {
     const currentTask = updatedTasks.find((t) => t.id === currentTaskId);
     if (currentTask) {
       try {
-        await submitTaskToBackend(currentTask);
+        await taskApi.submitTaskToBackend(currentTask); // Use taskApi
       } catch (error) {
         console.error('Failed to save task with subtasks:', error);
         // 可以在这里添加错误提示UI
@@ -260,7 +181,7 @@ export default function TaskManagerScreen() {
       prev.map((task) => {
         if (task.id === id) {
           const updated = { ...task, done: !task.done };
-          updateTaskStatus(updated.id, updated.subTasks, updated.done);
+          taskApi.updateTaskStatus(updated.id, updated.subTasks, updated.done); // Use taskApi
           return updated;
         }
         return task;
@@ -275,7 +196,7 @@ export default function TaskManagerScreen() {
           const updatedSubs = task.subTasks.map((st) =>
             st.id === subTaskId ? { ...st, done: !st.done } : st
           );
-          updateTaskStatus(taskId, updatedSubs, task.done);
+          taskApi.updateTaskStatus(taskId, updatedSubs, task.done); // Use taskApi
           return { ...task, subTasks: updatedSubs };
         }
         return task;
@@ -293,7 +214,7 @@ export default function TaskManagerScreen() {
       }));
     setTasks(filtered);
   };
-  
+
   // 左滑时显示的删除按钮(示例)
   const renderRightActions = (id: string) => {
     return (
@@ -385,7 +306,7 @@ export default function TaskManagerScreen() {
               {renderCategoryCard('Family', 'Family', '#F3E5F5')}
               {renderCategoryCard('Baby', 'Baby', '#FEF3C7')}
               {renderCategoryCard('Other', 'Other', '#EDE9FE')}
-            </View> 
+            </View>
 
             <FlatList
               data={tasks}
@@ -439,8 +360,8 @@ export default function TaskManagerScreen() {
                 onChangeText={setTaskText}
                 editable={!isAdding}
               />
-              <TouchableOpacity 
-                style={[styles.addButton, isAdding && styles.addButtonDisabled]} 
+              <TouchableOpacity
+                style={[styles.addButton, isAdding && styles.addButtonDisabled]}
                 onPress={addTask}
                 disabled={isAdding}
               >
@@ -607,7 +528,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#555',
   },
-  
+
   taskDone: {
     backgroundColor: '#E0F7FA',
   },

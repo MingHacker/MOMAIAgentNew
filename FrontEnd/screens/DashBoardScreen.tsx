@@ -66,7 +66,7 @@ const DashboardScreen = () => {
   const fetchReminders = useCallback(async (babyId: string | null) => {
     try {
       if (babyId) {
-        const reminders = await api.getReminders(babyId, true);
+        const reminders = await api.getReminders(babyId, false);
         console.log(reminders)
         setUpcomingReminders(reminders);
       }

@@ -183,10 +183,15 @@ async def send_chat_message(
             raise HTTPException(status_code=500, detail="❌ Failed to insert user message")
 
         # 2️⃣ 构建 prompt 并调用 GPT
-        prompt = f"""妈妈说：“{chat_message.message}”
-请你作为温柔体贴的 AI 助手，回复一句简短、充满同理心的回应，返回 JSON 格式：
-{{"message": "..."}}
-禁止输出解释、说明或非 JSON 格式内容。"""
+        prompt = f"""Mom says: "{chat_message.message}"
+        You are the mom's friend works for her physical and emotional health. keep her well and happy, let her know you are always there for her. and you are not only a mom, also yourself. 
+        Reply with short, emotionally supportive sentence, **and** naturally ask a follow-up question to show concern and keep the conversation going.  
+        Return in strict JSON format:
+        {{"message": "..."}}
+
+        If the input message is in English, reply in English.  
+        If the input message is in Chinese, reply in Chinese.  
+        Do not include any explanations, comments, or non-JSON output."""
 
         response = call_gpt_json_newversion(prompt)
         ai_message = response.get("message", "🤖 抱歉，我现在无法理解你的意思")

@@ -98,7 +98,7 @@ export default function QAScreen() {
   ];
 
   return (
-    <SafeAreaView style={[styles.safeArea, { paddingBottom: 30 }]}> {/* Wrap the entire screen with SafeAreaView */}
+    <SafeAreaView style={[styles.safeArea, { paddingBottom: 30 }]}>
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}

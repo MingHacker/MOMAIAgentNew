@@ -422,12 +422,14 @@ export const momApi = {
   getTodaySummary: async (): Promise<MomSummaryResponse> => {
     try {
       const response = await axiosInstance.get('/api/mom/summary');
+      console.log('Today Summary:', response.data);
       return response.data;
     } catch (error) {
       handleApiError(error);
       return { success: false, summary: '' };
     }
   },
+  
 
   getTodayHealth: async (): Promise<MomHealthResponse> => {
     try {
@@ -451,9 +453,9 @@ export const momApi = {
 
   getOneSentence: async (): Promise<MomOneSentenceResponse> => {
     try {
-      const res = await axiosInstance.get<MomOneSentenceResponse>('/api/mom/onesentence');
-      console.log('🧠 获取到的妈妈一句话：', res.data);
-      return res.data;
+      const onesentence = await axiosInstance.get<MomOneSentenceResponse>('/api/mom/onesentence');
+      console.log('🧠 获取到的妈妈一句话：', onesentence.data);
+      return onesentence.data;
     } catch (error) {
       handleApiError(error);
       return { success: false, onesentence: '' };

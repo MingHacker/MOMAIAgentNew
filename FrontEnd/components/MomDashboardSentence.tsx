@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity, Image } from 'react-native';
+import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity, Image, ScrollView } from 'react-native';
 import { momApi, MomOneSentenceResponse } from '../src/api';
 import { Platform } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -51,9 +51,13 @@ export default function MomDashboardSentence() {
   return (
     <View style={styles.quickSummaryCard}>
       <Image source={require('../assets/sleepy.png')} style={styles.image} />
-      <View style={styles.textContainer}>
+      <ScrollView 
+        style={styles.textContainer} 
+        contentContainerStyle={{ flexGrow: 1, justifyContent: 'center' }} 
+        showsVerticalScrollIndicator={false}
+      >
         <Text style={styles.summaryText}>{summary.onesentence}</Text>
-      </View>
+      </ScrollView>
       <TouchableOpacity 
         style={styles.likeButton} 
         onPress={handleLike}
@@ -89,6 +93,8 @@ const styles = StyleSheet.create({
   },
   textContainer: {
     flex: 1,
+    maxHeight: 40,
+    minHeight: 28,
   },
   title: {
     fontSize: 14,

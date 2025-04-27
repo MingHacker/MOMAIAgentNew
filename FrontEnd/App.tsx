@@ -281,7 +281,7 @@ function DrawerNavigator() {
         name="Event" 
         component={EventScreen} 
         options={{ 
-          title: 'Event',
+          title: 'Explore Events',
           drawerIcon: ({ focused, color, size }) => (
             <Ionicons name={focused ? 'calendar' : 'calendar-outline'} size={18} color={color} />
           )

@@ -72,7 +72,7 @@ const DashboardScreen = () => {
       }
     } catch (error) {
       console.error('Failed to fetch reminders:', error);
-      Toast.show({ type: 'error', text1: '❌ 加载提醒失败' });
+      Toast.show({ type: 'error', text1: '❌ Loading reminders failed' });
     }
   }, []);
 

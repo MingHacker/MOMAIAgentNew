@@ -74,10 +74,9 @@ def load_logs(baby_id: str, json_path: str):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Load baby logs into Supabase')
-    parser.add_argument('baby_id', type=str, help='Baby ID to associate with logs')
-    parser.add_argument('--json', type=str, default='SampleData/baby_logs_4_month_last_7_days.json',
-                       help='Path to JSON file (default: SampleData/baby_logs_4_month_last_7_days.json)')
+    parser.add_argument('--json', type=str, default='baby_logs_4_month_last_7_days.json',
+                       help='Path to JSON file (default: baby_logs_4_month_last_7_days.json)')
     
     args = parser.parse_args()
-    
-    load_logs(args.baby_id, args.json)
+    baby_id = "3296e4f0-d710-44e4-80bf-570493a64d27"
+    load_logs(baby_id, args.json)

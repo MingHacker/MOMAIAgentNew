@@ -279,11 +279,18 @@ def calculate_daily_summary(reminder, baby_id):
         if reminder['reminder_type'] == 'sleep':
             sleep_logs = [log for log in logs if log['log_type'] == 'sleep']
             total_mins = 0
+
             for log in sleep_logs:
                 try:
                     start = datetime.strptime(log['log_data']['sleepStart'], "%H:%M")
                     end = datetime.strptime(log['log_data']['sleepEnd'], "%H:%M")
+
+                    if end < start:
+                        # sleep across midnight, add 1 day to end
+                        end += timedelta(days=1)
+
                     total_mins += (end - start).total_seconds() / 60
+
                 except (KeyError, ValueError):
                     pass
             summary = {"totalmins": total_mins}

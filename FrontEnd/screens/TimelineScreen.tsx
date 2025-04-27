@@ -32,22 +32,22 @@ export default function TimelineScreen() {
   const fadeAnim = useState(new Animated.Value(0))[0];
 
   const emojiImages = [
-    { source: require('../assets/emojis/HappyE.png'), label: '开心', emoji: '😊' },
-    { source: require('../assets/emojis/ok.png'), label: '一般', emoji: '😐' },
-    { source: require('../assets/emojis/Unhappy.png'), label: '不开心', emoji: '😢' },
-    { source: require('../assets/emojis/Cry.png'), label: '哭泣', emoji: '😭' },
-    { source: require('../assets/emojis/CryOut.png'), label: '大哭', emoji: '😫' },
-    { source: require('../assets/emojis/Sleepy.png'), label: '困了', emoji: '😴' },
-    { source: require('../assets/emojis/Friendly.png'), label: '友好', emoji: '🤗' },
-    { source: require('../assets/emojis/Wow.png'), label: '惊讶', emoji: '😲' },
-    { source: require('../assets/emojis/No.png'), label: '拒绝', emoji: '🙅' },
-    { source: require('../assets/emojis/guai.png'), label: '乖', emoji: '😇' },
-    { source: require('../assets/emojis/noo.png'), label: '不要', emoji: '😣' },
-    { source: require('../assets/emojis/what.png'), label: '什么', emoji: '🤔' },
-    { source: require('../assets/emojis/please.png'), label: '拜托', emoji: '🙏' },
-    { source: require('../assets/emojis/crying.png'), label: '哭', emoji: '😢' },
-    { source: require('../assets/emojis/okk.png'), label: '好的', emoji: '👌' },
-    { source: require('../assets/emojis/idontwant.png'), label: '不想', emoji: '😤' }
+    { source: require('../assets/emojis/HappyE.png'), label: 'Happy', emoji: '😊' },
+    { source: require('../assets/emojis/ok.png'), label: 'Neutral', emoji: '😐' },
+    { source: require('../assets/emojis/Unhappy.png'), label: 'Unhappy', emoji: '😢' },
+    { source: require('../assets/emojis/Cry.png'), label: 'Crying', emoji: '😭' },
+    { source: require('../assets/emojis/CryOut.png'), label: 'Bawling', emoji: '😫' },
+    { source: require('../assets/emojis/Sleepy.png'), label: 'Sleepy', emoji: '😴' },
+    { source: require('../assets/emojis/Friendly.png'), label: 'Friendly', emoji: '🤗' },
+    { source: require('../assets/emojis/Wow.png'), label: 'Surprised', emoji: '😲' },
+    { source: require('../assets/emojis/No.png'), label: 'Refusal', emoji: '🙅' },
+    { source: require('../assets/emojis/guai.png'), label: 'Well-behaved', emoji: '😇' },
+    { source: require('../assets/emojis/noo.png'), label: 'Don\'t want', emoji: '😣' },
+    { source: require('../assets/emojis/what.png'), label: 'What', emoji: '🤔' },
+    { source: require('../assets/emojis/please.png'), label: 'Please', emoji: '🙏' },
+    { source: require('../assets/emojis/crying.png'), label: 'Crying', emoji: '😢' },
+    { source: require('../assets/emojis/okk.png'), label: 'Okay', emoji: '👌' },
+    { source: require('../assets/emojis/idontwant.png'), label: 'I don\'t want', emoji: '😤' }
   ];
 
 

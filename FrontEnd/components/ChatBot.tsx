@@ -394,6 +394,33 @@ const ChatBot = () => {
     );
   };
 
+  const renderSuggestions = () => {
+    const suggestions = [
+      "How's baby's sleep?",
+      "Feeding time?",
+      "Diaper change?",
+      "Outside time?",
+      "Baby's mood?",
+      "Health check",
+      "Growth track",
+      "Daily summary"
+    ];
+
+    return (
+      <View style={styles.suggestionsContainer}>
+        {suggestions.map((suggestion, index) => (
+          <TouchableOpacity
+            key={index}
+            style={styles.suggestionBubble}
+            onPress={() => handleSuggestionPress(suggestion)}
+          >
+            <Text style={styles.suggestionText}>{suggestion}</Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+    );
+  };
+
   return (
     <>
       {shouldShowIcon && (
@@ -552,22 +579,25 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     overflow: 'hidden',
-    marginBottom: 20,
+    marginBottom: -20,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 16,
+    padding: 10,
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+    borderBottomColor: '#E5E7EB',
+    backgroundColor: '#F3F4F6',
+    borderTopLeftRadius: 12,
+    borderTopRightRadius: 12,
   },
   headerContent: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   headerText: {
-    fontSize: 18,
+    fontSize: 14,
     fontWeight: '600',
     color: '#8B5CF6',
     marginLeft: 8,
@@ -707,6 +737,64 @@ const styles = StyleSheet.create({
     height: '100%',
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  container: {
+    position: 'absolute',
+    bottom: 80,
+    right: 20,
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+    width: '90%',
+    maxHeight: '80%',
+  },
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  avatar: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    marginRight: 8,
+  },
+  title: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#374151',
+  },
+  closeButton: {
+    padding: 5,
+  },
+  closeIcon: {
+    fontSize: 20,
+    color: '#666',
+  },
+  suggestionsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    padding: 8,
+    gap: 8,
+  },
+  suggestionBubble: {
+    backgroundColor: '#F3F4F6',
+    borderRadius: 15,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    marginBottom: 0,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+  suggestionText: {
+    fontSize: 12,
+    color: '#374151',
   },
 });
 

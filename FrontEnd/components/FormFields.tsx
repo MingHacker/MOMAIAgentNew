@@ -6,13 +6,19 @@ import {
   TextInput,
   Platform,
   StyleSheet,
-  ScrollView
+  ScrollView,
+  Alert
 } from 'react-native';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
+import dayjs from 'dayjs';
 
 const FormFields = ({ selectedType, formData, setFormData }) => {
   const [iosPickerField, setIosPickerField] = useState<string | null>(null);
   const [androidPickerField, setAndroidPickerField] = useState<string | null>(null);
+  
+  // 添加日期时间状态
+  const [sleepStartDateTime, setSleepStartDateTime] = useState(new Date());
+  const [sleepEndDateTime, setSleepEndDateTime] = useState(new Date());
 
   const handleShowIOSPicker = (fieldKey: string) => {
     setIosPickerField(fieldKey);
@@ -26,13 +32,39 @@ const FormFields = ({ selectedType, formData, setFormData }) => {
       return;
     }
 
+    const key = iosPickerField || androidPickerField;
+    if (!key) return;
+
     const hh = date.getHours().toString().padStart(2, '0');
     const mm = date.getMinutes().toString().padStart(2, '0');
     const timeValue = `${hh}:${mm}`;
 
-    const key = iosPickerField || androidPickerField;
-    if (key) {
-      setFormData((prev) => ({ ...prev, [key]: timeValue }));
+    if (key === 'sleepStart') {
+      // 设置开始时间
+      setSleepStartDateTime(date);
+      setFormData(prev => ({ ...prev, sleepStart: timeValue }));
+      
+      // 如果结束时间早于开始时间，自动调整结束时间
+      if (sleepEndDateTime < date) {
+        const newEndDate = new Date(date);
+        newEndDate.setHours(date.getHours() + 1); // 默认设置为开始时间后1小时
+        setSleepEndDateTime(newEndDate);
+        setFormData(prev => ({
+          ...prev,
+          sleepEnd: `${newEndDate.getHours().toString().padStart(2, '0')}:${newEndDate.getMinutes().toString().padStart(2, '0')}`
+        }));
+      }
+    } else if (key === 'sleepEnd') {
+      // 检查结束时间是否早于开始时间
+      if (date < sleepStartDateTime) {
+        // 如果选择的结束时间早于开始时间，将其设置为第二天的同一时间
+        date.setDate(date.getDate() + 1);
+        Alert.alert('提示', '已自动调整为第二天的时间');
+      }
+      setSleepEndDateTime(date);
+      setFormData(prev => ({ ...prev, sleepEnd: timeValue }));
+    } else {
+      setFormData(prev => ({ ...prev, [key]: timeValue }));
     }
 
     setIosPickerField(null);
@@ -43,13 +75,19 @@ const FormFields = ({ selectedType, formData, setFormData }) => {
     const isVisible = iosPickerField === fieldKey || androidPickerField === fieldKey;
     if (!isVisible) return null;
 
+    const minimumDate = fieldKey === 'sleepEnd' ? sleepStartDateTime : undefined;
+    const initialDate = fieldKey === 'sleepStart' ? sleepStartDateTime : 
+                       fieldKey === 'sleepEnd' ? sleepEndDateTime : 
+                       new Date();
+
     return (
       <DateTimePicker
-        value={new Date()}
+        value={initialDate}
         mode="time"
         display={Platform.OS === 'ios' ? 'spinner' : 'clock'}
         onChange={onPickerChange}
         style={{ marginTop: 10 }}
+        minimumDate={minimumDate}
       />
     );
   };
@@ -80,14 +118,24 @@ const FormFields = ({ selectedType, formData, setFormData }) => {
         return (
           <>
             <Text style={styles.formLabel}>Start Time</Text>
-            <TouchableOpacity onPress={() => handleShowIOSPicker('sleepStart')} style={styles.timeButton}>
-              <Text>{formData.sleepStart || 'Select'}</Text>
+            <TouchableOpacity 
+              onPress={() => handleShowIOSPicker('sleepStart')} 
+              style={styles.timeButton}
+            >
+              <Text style={styles.timeButtonText}>
+                {formData.sleepStart || 'Select Start Time'}
+              </Text>
             </TouchableOpacity>
             {renderTimePicker('sleepStart')}
 
             <Text style={styles.formLabel}>End Time</Text>
-            <TouchableOpacity onPress={() => handleShowIOSPicker('sleepEnd')} style={styles.timeButton}>
-              <Text>{formData.sleepEnd || 'Select'}</Text>
+            <TouchableOpacity 
+              onPress={() => handleShowIOSPicker('sleepEnd')} 
+              style={styles.timeButton}
+            >
+              <Text style={styles.timeButtonText}>
+                {formData.sleepEnd || 'Select End Time'}
+              </Text>
             </TouchableOpacity>
             {renderTimePicker('sleepEnd')}
           </>
@@ -150,6 +198,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
     fontSize: 14,
     fontWeight: '500',
+    color: '#000000', // 文字颜色改为黑色
   },
   timeButton: {
     borderRadius: 8,
@@ -159,6 +208,11 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#E5E7EB',
   },
+  timeButtonText: {
+    color: '#000000', // 按钮文字颜色改为黑色
+    fontSize: 14,
+    fontWeight: '400',
+  },
   input: {
     borderWidth: 1,
     borderColor: '#ccc',
@@ -166,6 +220,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     marginTop: 8,
     fontSize: 14,
+    color: '#000000', // 输入框文字颜色改为黑色
   },
 });
 

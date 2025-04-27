@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -25,8 +25,6 @@ export default function QAScreen() {
   const [imageBase64, setImageBase64] = useState<string | null>(null);
   const [imageUri, setImageUri] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
-  const [selectedImage, setSelectedImage] = useState<string | null>(null);
-  const scrollViewRef = React.useRef<ScrollView>(null);
 
   const pickImage = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -99,188 +97,152 @@ export default function QAScreen() {
     'Can I give vitamin D and go outside on the same day?',
   ];
 
-  useEffect(() => {
-    const keyboardDidShowListener = Keyboard.addListener(
-      'keyboardDidShow',
-      (event) => {
-        scrollViewRef.current?.scrollToEnd({ animated: true });
-      }
-    );
-
-    const keyboardDidHideListener = Keyboard.addListener(
-      'keyboardDidHide',
-      () => {
-        scrollViewRef.current?.scrollToEnd({ animated: true });
-      }
-    );
-
-    return () => {
-      keyboardDidShowListener.remove();
-      keyboardDidHideListener.remove();
-    };
-  }, []);
-
-  useEffect(() => {
-    setTimeout(() => {
-      scrollViewRef.current?.scrollToEnd({ animated: false });
-    }, 100);
-  }, []);
-
-  useEffect(() => {
-    if (messages.length > 0) {
-      setTimeout(() => {
-        scrollViewRef.current?.scrollToEnd({ animated: true });
-      }, 100);
-    }
-  }, [messages]);
-
   return (
-    <SafeAreaView style={styles.container}>
-      <ScrollView 
-        ref={scrollViewRef}
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollViewContent}
-        keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={false}
-        onContentSizeChange={() => {
-          scrollViewRef.current?.scrollToEnd({ animated: false });
-        }}
-        onLayout={() => {
-          scrollViewRef.current?.scrollToEnd({ animated: false });
-        }}
-      >
-        <View style={styles.chatBubbleWrap}>
-          {submitted && answer !== '' && (
-            <View style={styles.answerBubble}>
-              <Text style={styles.answerText}>{answer}</Text>
+    <SafeAreaView style={[styles.safeArea, { paddingBottom: 30 }]}> {/* Wrap the entire screen with SafeAreaView */}
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          style={{ flex: 1 }}
+          keyboardVerticalOffset={Platform.OS === 'ios' ? 80 : 0}
+        >
+          <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
+            <View style={styles.chatBubbleWrap}>
+              {submitted && answer !== '' && (
+                <View style={styles.answerBubble}>
+                  <Text style={styles.answerText}>{answer}</Text>
+                </View>
+              )}
             </View>
-          )}
-        </View>
-        <View style={{ height: 20 }} />
-      </ScrollView>
 
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'position' : undefined}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
-      >
-        <View style={styles.inputWrapper}>
-          {selectedImage && (
-            <View style={styles.imagePreview}>
-              <Image source={{ uri: selectedImage }} style={styles.previewImage} />
-              <TouchableOpacity onPress={() => setSelectedImage(null)}>
-                <Text style={styles.removeImage}>×</Text>
-              </TouchableOpacity>
+            <View style={styles.inputArea}>
+              <TextInput
+                style={styles.input}
+                placeholder="Ask anything..."
+                value={question}
+                onChangeText={setQuestion}
+                multiline
+              />
+
+              <View style={styles.quickRow}>
+                {suggestions.map((item) => (
+                  <TouchableOpacity
+                    key={item}
+                    style={styles.tag}
+                    onPress={() => setQuestion(item)}>
+                    <Text style={styles.tagText}>{item}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+
+              <View style={styles.bottomButtons}>
+                <TouchableOpacity onPress={pickImage} style={styles.iconButton}>
+                  <Text style={styles.iconButtonText}>＋ Image</Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={askOpenAIVision} style={styles.sendButtonSoft}>
+                  <Text style={styles.sendButtonSoftText}>Submit</Text>
+                </TouchableOpacity>
+              </View>
+
+              {imageUri && <Image source={{ uri: imageUri }} style={styles.preview} />}
+              {loading && <ActivityIndicator size="large" color="#999" style={{ marginTop: 20 }} />}
             </View>
-          )}
-          
-          <View style={styles.inputContainer}>
-            <TextInput
-              style={styles.input}
-              value={question}
-              onChangeText={setQuestion}
-              placeholder="Ask me anything..."
-              multiline
-            />
-            <TouchableOpacity style={styles.imageButton} onPress={pickImage}>
-              <Text style={styles.buttonText}>+</Text>
-            </TouchableOpacity>
-            <TouchableOpacity 
-              style={[styles.submitButton, !question && styles.submitButtonDisabled]}
-              onPress={askOpenAIVision}
-              disabled={!question}
-            >
-              <Text style={styles.submitButtonText}>→</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </KeyboardAvoidingView>
+          </ScrollView>
+        </KeyboardAvoidingView>
+      </TouchableWithoutFeedback>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    backgroundColor: '#fff',
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollViewContent: {
+    backgroundColor: '#FAFAF8',
+    padding: 20,
+    paddingTop: 40,
     flexGrow: 1,
-    paddingHorizontal: 15,
-    paddingBottom: 20,
   },
-  inputWrapper: {
-    borderTopWidth: 1,
-    borderTopColor: '#E5E7EB',
-    backgroundColor: '#fff',
+  safeArea: { flex: 1, backgroundColor: '#fff' },
+  title: {
+    fontSize: 20,
+    fontWeight: '600',
+    marginBottom: 12,
+    textAlign: 'center',
+    color: '#4B5563',
+    fontFamily: 'System',
   },
-  inputContainer: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    paddingHorizontal: 15,
-    paddingVertical: 8,
+  inputArea: {
+    marginTop: 10,
+    marginBottom: 10,
     backgroundColor: '#fff',
-    gap: 8,
+    borderRadius: 24,
+    padding: 16,
+    paddingBottom: 10,
+    shadowColor: '#ccc',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+    elevation: 3,
   },
   input: {
-    flex: 1,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
     borderRadius: 20,
-    paddingHorizontal: 15,
-    paddingTop: 8,
-    paddingBottom: 8,
-    maxHeight: 100,
-    fontSize: 16,
-  },
-  imageButton: {
-    width: 35,
-    height: 35,
-    borderRadius: 17.5,
+    padding: 18,
+    fontSize: 17,
     backgroundColor: '#F3F4F6',
-    justifyContent: 'center',
+    marginBottom: 12,
+    color: '#333',
+    height: 140,
+    fontFamily: 'System',
+  },
+  quickRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: 12,
+  },
+  tag: {
+    backgroundColor: '#F9F5FF',
+    borderRadius: 24,
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    marginRight: 6,
+    marginBottom: 6,
+  },
+  tagText: {
+    fontSize: 13,
+    color: '#4C3575',
+    fontFamily: 'System',
+  },
+  bottomButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
+    marginTop: 10,
   },
-  submitButton: {
-    width: 35,
-    height: 35,
-    borderRadius: 17.5,
-    backgroundColor: '#8B5CF6',
-    justifyContent: 'center',
-    alignItems: 'center',
+  iconButton: {
+    backgroundColor: '#F3F4F6',
+    borderRadius: 30,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
   },
-  submitButtonDisabled: {
-    backgroundColor: '#E5E7EB',
-  },
-  buttonText: {
-    fontSize: 24,
+  iconButtonText: {
+    fontSize: 14,
     color: '#666',
   },
-  submitButtonText: {
-    fontSize: 18,
-    color: '#fff',
+  sendButtonSoft: {
+    backgroundColor: '#F9F5FF',
+    borderRadius: 24,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
   },
-  imagePreview: {
-    padding: 10,
+  sendButtonSoftText: {
+    color: '#4C3575',
+    fontWeight: '500',
+    fontSize: 16,
   },
-  previewImage: {
-    width: 100,
-    height: 100,
-    borderRadius: 10,
-  },
-  removeImage: {
-    position: 'absolute',
-    top: 0,
-    right: 5,
-    backgroundColor: '#FF4444',
-    color: '#fff',
+  preview: {
+    width: '100%',
+    height: 200,
     borderRadius: 12,
-    width: 24,
-    height: 24,
-    textAlign: 'center',
-    lineHeight: 24,
+    marginTop: 16,
   },
   chatBubbleWrap: {
     marginBottom: 16,

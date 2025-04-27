@@ -3,6 +3,9 @@ import { DateTime } from 'luxon';
 import { supabase } from './supabaseClient'
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_BASE_URL} from '@env';
+import { getHealthCache } from '../utils/healthCache'; // Import getHealthCache
+
+
 // Base API configuration
 export const axiosInstance = axios.create({
   baseURL: API_BASE_URL,
@@ -144,10 +147,10 @@ export const api = {
     try {
       await AsyncStorage.removeItem('access_token');
       await AsyncStorage.removeItem('refresh_token');
-  
+
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
-  
+
       console.log('🔒 Logged out successfully');
     } catch (error) {
       console.error('❌ Logout failed:', error);
@@ -294,7 +297,7 @@ export const api = {
     try {
       const response = await axiosInstance.post(`/babies/${babyId}/generate-reminders`);
       // Assuming the backend returns a specific structure on success
-      return response.data; 
+      return response.data;
     } catch (error) {
       handleApiError(error);
     }
@@ -330,7 +333,7 @@ export const api = {
       }
       // console.log('chat history from api ts:', response.data);
       return response.data;
-      
+
     } catch (error) {
       console.error('Failed to get chat history:', error);
       return [];
@@ -628,4 +631,198 @@ export const timelineApi = {
       return false;
     }
   }
+};
+
+// --- Task Endpoints ---
+
+// 子任务类型
+interface TaskUpdate {
+  id: string;
+  done: Boolean;
+}
+
+// 任务类型
+interface Task {
+  id: string;
+  text: string;
+  type: 'Health' | 'Family' | 'Baby' | 'Other';
+  done: boolean;
+  subTasks: SubTask[];
+  title: string;
+  description: string;
+  created_at: string;
+  completed: boolean;
+}
+
+// 子任务类型
+interface SubTask {
+  id: string;
+  text: string;
+  done: boolean;
+}
+
+// "建议子任务"的结构（包括是否被选中）
+interface SuggestedItem {
+  text: string;
+  selected: boolean;
+}
+
+type CategoryType = 'Health' | 'Family' | 'Baby' | 'Other';
+
+
+export const taskApi = {
+  updateTaskStatus: async (
+    mainTaskId: string,
+    subTasks: TaskUpdate[],
+    done: boolean
+  ) => {
+    try {
+      const mainTaskUpdate: TaskUpdate = {
+        id: mainTaskId,
+        done: done
+      }
+
+      const res = await axiosInstance.post('/api/task/update', {
+        main_task: mainTaskUpdate,
+        sub_tasks: subTasks,
+      });
+      console.log('✅ Task status updated successfully:', res.data);
+      return res.data;
+    } catch (err) {
+      console.error('❌ Failed to update task status:', err);
+      throw err;
+    }
+  },
+
+  submitTaskToBackend: async (task: Task) => {
+    try {
+      // Prepare data to send to backend
+      const taskData = {
+        main_task: {
+          id: task.id,
+          text: task.text,
+          type: task.type || 'Other',
+          done: task.done,
+          title: task.title || task.text,
+          description: task.description || '',
+          created_at: task.created_at,
+          completed: task.completed
+        },
+        sub_tasks: task.subTasks.map(subTask => ({
+          id: subTask.id,
+          text: subTask.text,
+          done: subTask.done,
+          main_task_id: task.id
+        }))
+      };
+
+      console.log('Saving task to backend:', JSON.stringify(taskData, null, 2));
+
+      const result = await axiosInstance.post('/api/task/save', taskData);
+
+      if (result.data && result.data.success) {
+        console.log('✅ Task saved successfully:', result.data);
+      } else {
+        console.error('❌ Failed to save task:', result.data);
+        throw new Error(result.data?.message || 'Failed to save task');
+      }
+    } catch (error: any) {
+      console.error('❌ Error saving task:', error);
+      if (error.response) {
+        console.error('Response data:', error.response.data);
+        console.error('Response status:', error.response.status);
+        console.error('Response headers:', error.response.headers);
+      } else if (error.request) {
+        console.error('Request error:', error.request);
+      } else {
+        console.error('Error message:', error.message);
+      }
+      throw error;
+    }
+  },
+
+  getTaskSuggestionsFromBackend: async (mainTaskText: string) => {
+    try {
+      // Get cached health data
+      let momHealth = await getHealthCache('mom_health');
+      let babyHealth = await getHealthCache('baby_health');
+      const babyId = await AsyncStorage.getItem('baby_id');
+
+      if (!babyId) {
+        throw new Error('No baby_id found');
+      }
+
+      // If no data in cache, try to get latest data
+      if (!momHealth) {
+        const momResponse = await momApi.getTodayHealth();
+        if (momResponse.success && momResponse.data) {
+          momHealth = momResponse.data;
+        }
+      }
+
+      if (!babyHealth) {
+        const babyResponse = await babyApi.getRawDailyData(babyId);
+        if (babyResponse.success && babyResponse.summary) {
+          babyHealth = babyResponse.summary;
+        }
+      }
+    // ✅ fallback structure
+      const safeMomHealth = momHealth && Object.keys(momHealth).length > 0
+      ? momHealth
+      : { status: 'ok' };
+
+      const safeBabyHealth = babyHealth && Object.keys(babyHealth).length > 0
+      ? babyHealth
+      : { status: 'ok' };
+
+      // Call backend API to get task suggestions (using axiosInstance with token)
+      try {
+        const response = await axiosInstance.post('/api/task/gpt', {
+          input_text: mainTaskText,
+          mom_health_status: safeMomHealth,
+          baby_health_status: safeBabyHealth,
+        });
+
+        console.log('API Response:', response.data);
+
+        if (!response.data.success) {
+          console.error('API Error:', response.data);
+          // Return default suggestions instead of throwing error
+          return {
+            category: 'Other',
+            suggestions: [
+              { text: '记录任务完成情况', selected: false },
+              { text: '设置提醒', selected: false },
+              { text: '添加备注', selected: false }
+            ],
+          };
+        }
+
+        return {
+          category: response.data.category,
+          suggestions: response.data.output.map((item: { title: string }) => ({
+            text: item.title,
+            selected: false,
+          })),
+        };
+      } catch (error: any) {
+        console.error('API Request Error:', error.response?.data || error);
+        // Return default suggestions instead of throwing error
+        return {
+          category: 'Other',
+          suggestions: [
+            { text: '记录任务完成情况', selected: false },
+            { text: '设置提醒', selected: false },
+            { text: '添加备注', selected: false }
+          ],
+        };
+      }
+    } catch (error) {
+      console.error('获取任务建议失败:', error);
+      return {
+        category: 'Other',
+        suggestions: [],
+      };
+    }
+  },
 };

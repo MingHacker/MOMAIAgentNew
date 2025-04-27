@@ -258,16 +258,6 @@ function DrawerNavigator() {
         }} 
       />
       <Drawer.Screen 
-        name="BabyProfile" 
-        component={BabyProfileScreen} 
-        options={{ 
-          title: 'Profile',
-          drawerIcon: ({ focused, color, size }) => (
-            <Ionicons name={focused ? 'person' : 'person-outline'} size={18} color={color} />
-          )
-        }} 
-      />
-      <Drawer.Screen 
         name="Timeline" 
         component={TimelineScreen} 
         options={{ 
@@ -283,7 +273,17 @@ function DrawerNavigator() {
         options={{ 
           title: 'Explore Events',
           drawerIcon: ({ focused, color, size }) => (
-            <Ionicons name={focused ? 'calendar' : 'calendar-outline'} size={18} color={color} />
+            <Ionicons name={focused ? 'location' : 'location-outline'} size={18} color={color} />
+          )
+        }} 
+      />
+      <Drawer.Screen 
+        name="GrowthChart" 
+        component={GrowthChartScreen} 
+        options={{ 
+          title: 'Growth Chart',
+          drawerIcon: ({ focused, color, size }) => (
+            <Ionicons name={focused ? 'trending-up' : 'trending-up-outline'} size={18} color={color} />
           )
         }} 
       />
@@ -298,12 +298,12 @@ function DrawerNavigator() {
         }} 
       />
       <Drawer.Screen 
-        name="GrowthChart" 
-        component={GrowthChartScreen} 
+        name="BabyProfile" 
+        component={BabyProfileScreen} 
         options={{ 
-          title: 'Growth Chart',
+          title: 'Profile',
           drawerIcon: ({ focused, color, size }) => (
-            <Ionicons name={focused ? 'trending-up' : 'trending-up-outline'} size={18} color={color} />
+            <Ionicons name={focused ? 'person' : 'person-outline'} size={18} color={color} />
           )
         }} 
       />

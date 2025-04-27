@@ -7,10 +7,39 @@ import os
 
 load_dotenv()
 
-CATEGORIES = ["baby_care", "shopping", "housework", "healthcare", "self_care", "work", "other"]
+CATEGORIES = ["Health", "Family", "Baby", "Other"]
 
 load_dotenv()
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
+def parse_gpt_category(content: str) -> str:
+    try:
+        # 优先用正则提取 JSON 代码块
+        match = re.search(r"```json\s*(\{.*?\})\s*```", content, re.DOTALL)
+        if match:
+            json_str = match.group(1)
+        else:
+            # 回退方式：直接找 { 开始
+            json_start = content.find("{")
+            if json_start == -1:
+                print("❌ 未找到 JSON 内容")
+                return ""
+            json_str = content[json_start:]
+
+        # 尝试解析 JSON
+        try:
+            result = json.loads(json_str)
+            if "category" not in result:
+                print("❌ 返回结果缺少 category 字段")
+                return ""
+            return result["category"]
+        except json.JSONDecodeError as e:
+            print("❌ JSON 解析失败:", str(e))
+            return ""
+
+    except Exception as e:
+        print("❌ GPT 调用失败:", str(e))
+        return ""
 
 def parse_gpt_json(content: str):
     try:
@@ -156,13 +185,11 @@ def detect_task_category(task_title: str) -> Optional[str]:
 You are an AI assistant helping a mom categorize her tasks.
 
 Here are the possible categories:
-- baby_care: feeding, sleep, diaper, bath, play
-- shopping: buying items (diapers, groceries, etc.)
-- housework: cleaning, laundry, dishes
-- healthcare: appointments, checkups, medicine
-- self_care: exercise, meditation, journaling
-- work: job-related tasks
-- other: if none of the above fits
+- Baby: tasks related to baby care, such as feeding, sleeping, diaper changes, baths, or playtime.
+- Health: tasks related to healthcare, self-care, doctor appointments, exercise, or emotional well-being.
+- Family: tasks related to family activities, outings, celebrations, or managing family needs.
+- Other: any tasks that do not fit into the above categories.
+
 
 Task: "{task_title}"
 Which category does this task belong to? Only reply with the category name.
@@ -170,11 +197,22 @@ Which category does this task belong to? Only reply with the category name.
 
     try:
         response = client.chat.completions.create(
-            model="deepseek-chat",
-            messages=[{"role": "user", "content": prompt}],
+            model="gpt-4o",
+            messages=[
+                {"role": "system", "content": "你是一个善于将任务结构化的生活助理，只返回 JSON 格式的任务列表"},
+                {"role": "user", "content": prompt}
+            ],
+            temperature=0.3
         )
-        category = response.choices[0].message.content.strip().lower()
-        return category if category in CATEGORIES else "other"
+        content = response.choices[0].message.content.strip()
+        if isinstance(content, str):
+            category = parse_gpt_category(content)  # content 是字符串，解析成 dict
+        elif isinstance(content, dict):
+            category = content  # content 已经是 dict，不需要再解析
+        else:
+            print("⚠️ GPT 回复格式异常")
+            category =  "Other"
+        return category if category in CATEGORIES else "Other"
 
     except Exception as e:
         print(f"Error detecting task category: {e}")

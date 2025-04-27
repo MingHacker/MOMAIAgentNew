@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -60,6 +60,36 @@ export default function TaskManagerScreen() {
   const [taskText, setTaskText] = useState('');
   const [tasks, setTasks] = useState<Task[]>([]);
   const [isSubTaskModalVisible, setSubTaskModalVisible] = useState(false);
+
+  // Fetch incomplete tasks on component mount
+  useEffect(() => {
+    const fetchTasks = async () => {
+      try {
+        const incompleteTasks = await taskApi.getIncompleteTasks();
+        setTasks(incompleteTasks);
+      } catch (error) {
+        console.error('Failed to fetch incomplete tasks:', error);
+      }
+    };
+
+    fetchTasks();
+  }, []); // Empty dependency array ensures this runs only once on mount
+
+  // Refresh incomplete tasks every 10 minutes
+  useEffect(() => {
+    const intervalId = setInterval(async () => {
+      try {
+        const incompleteTasks = await taskApi.getIncompleteTasks();
+        setTasks(incompleteTasks);
+      } catch (error) {
+        console.error('Failed to refresh incomplete tasks:', error);
+      }
+    }, 600000); // 10 minutes in milliseconds
+
+    // Cleanup function to clear the interval when the component unmounts
+    return () => clearInterval(intervalId);
+  }, []); // Empty dependency array ensures this runs only once on mount
+
   const [currentTaskId, setCurrentTaskId] = useState<string | null>(null);
   const [subTaskText, setSubTaskText] = useState('');
   const [subTaskSuggestions, setSubTaskSuggestions] = useState<SuggestedItem[]>([]);

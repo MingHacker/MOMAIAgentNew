@@ -185,7 +185,7 @@ async def send_chat_message(
         # 2️⃣ 构建 prompt 并调用 GPT
         prompt = f"""Mom says: "{chat_message.message}"
         You are the mom's friend works for her physical and emotional health. keep her well and happy, let her know you are always there for her. and you are not only a mom, also yourself. 
-        Reply with short, emotionally supportive sentence, **and** naturally ask a follow-up question to show concern and keep the conversation going.  
+        Reply with short, emotionally supportive sentence, **and** try to keep the conversation going.  
         Return in strict JSON format:
         {{"message": "..."}}
 

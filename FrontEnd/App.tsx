@@ -27,6 +27,7 @@ import BabyProfileScreen from './screens/BabyProfileScreen';
 import RecommendedFeaturesScreen from './screens/RecommandFeatureScreen';
 import TimelineScreen from './screens/TimelineScreen';
 import GrowthChartScreen from './screens/GrowthChartScreen';
+import EventScreen from './screens/EventScreen';
 import { Alert } from 'react-native';
 
 type AuthContextType = {
@@ -271,6 +272,16 @@ function DrawerNavigator() {
         component={TimelineScreen} 
         options={{ 
           title: 'Timeline Story',
+          drawerIcon: ({ focused, color, size }) => (
+            <Ionicons name={focused ? 'calendar' : 'calendar-outline'} size={18} color={color} />
+          )
+        }} 
+      />
+      <Drawer.Screen 
+        name="Event" 
+        component={EventScreen} 
+        options={{ 
+          title: 'Event',
           drawerIcon: ({ focused, color, size }) => (
             <Ionicons name={focused ? 'calendar' : 'calendar-outline'} size={18} color={color} />
           )

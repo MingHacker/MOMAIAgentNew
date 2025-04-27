@@ -69,7 +69,7 @@ export default function HealthSummaryScreen() {
   if (!momData) {
     return (
       <SafeAreaView style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-        <Text>正在加载健康数据...</Text>
+        <Text>Loading...</Text>
       </SafeAreaView>
     );
   }
@@ -88,7 +88,7 @@ export default function HealthSummaryScreen() {
       <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 20 }}>
         <BabyStatusCard summary={babySummary} />
         <MomStatusCard summary={momSummary} />
-        <MoodSelector mood={mood} setMood={setMood} />
+        <MoodSelector onMoodSelect={(selectedMood: string) => setMood(selectedMood)} />
 
 
         {/* Baby Feeding Card */}

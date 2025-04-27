@@ -96,11 +96,11 @@ def get_weekly_baby_summary(baby_id: str, user_id: str = Depends(get_current_use
                     daily["bowel_count"] += 1
 
             elif log_type == "outside":
-                duration = data.get("duration", 0)
+                duration = data.get("outsideDuration", 0)
                 daily["outside_total_minutes"] += int(duration)
 
             elif log_type == "cry":
-                duration = data.get("duration", 0)
+                duration = data.get("cryDuration", 0)
                 daily["cry_total_minutes"] += int(duration)
 
         # Print statement for debugging

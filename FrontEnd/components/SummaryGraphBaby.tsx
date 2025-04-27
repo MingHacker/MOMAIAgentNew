@@ -51,7 +51,7 @@ export default function HealthSummaryScreen() {
     return (
       <SafeAreaView style={styles.safeArea}>
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-          <Text>正在加载健康数据...</Text>
+          <Text>Loading...</Text>
         </View>
       </SafeAreaView>
     );

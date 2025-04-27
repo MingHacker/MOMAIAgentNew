@@ -84,7 +84,7 @@ export default function HealthSummaryScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={[styles.safeArea, { paddingBottom: 30 }]}>
       <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 20 }}>
         <BabyStatusCard summary={babySummary} />
         <MomStatusCard summary={momSummary} />

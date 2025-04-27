@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity, Platform } from 'react-native';
-import { babyApi, BabyRawDataResponse } from '../src/api';
+import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity, Platform, ScrollView } from 'react-native';
+import { babyApi, BabyRawDataResponse, BabySummaryResponse } from '../src/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import dayjs from 'dayjs';
 
@@ -8,18 +8,27 @@ export default function BabyStatusCard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [dailyData, setDailyData] = useState<BabyRawDataResponse | null>(null);
+  const [summaryData, setSummaryData] = useState<BabySummaryResponse | null>(null);
 
   const fetchBabyData = async () => {
     try {
       setLoading(true);
-      const babyId = await AsyncStorage.getItem('baby_id');
+      const babyId = await AsyncStorage.getItem('baby_id') || '';
       if (!babyId) {
         setError('No baby info found');
         return;
       }
 
-      const response = await babyApi.getRawDailyData(babyId);
-      setDailyData(response);
+      const dailyResponse = await babyApi.getRawDailyData(babyId);
+      setDailyData(dailyResponse);
+
+      const summaryResponse = await babyApi.getTodaySummary(babyId);
+      if (summaryResponse.success && summaryResponse.summary) {
+        setSummaryData(summaryResponse);
+      } else {
+        console.error('Failed to fetch baby data:', summaryResponse);
+        setError('Failed to fetch baby data');
+      }
     } catch (error) {
       console.error('Failed to fetch baby data:', error);
       setError('Failed to fetch baby data');
@@ -71,16 +80,22 @@ export default function BabyStatusCard() {
       <View style={styles.row}>
         {/* Left: Baby summary message */}
         <View style={styles.left}>
-          <Text style={styles.summaryText}>
-          🩷Baby seems happy today — well fed and well rested 💫
-          </Text>
+          <ScrollView 
+            style={styles.summaryScroll}
+            contentContainerStyle={{ flexGrow: 1, justifyContent: 'center' }}
+            showsVerticalScrollIndicator={true}
+          >
+            <Text style={styles.summaryText}>
+              {summaryData?.summary || '🩷Baby seems happy today — well fed and well rested 💫'}
+            </Text>
+          </ScrollView>
         </View>
 
         {/* Right: Data stack */}
         <View style={styles.right}>
           <Text style={styles.dataItem}>🍼 {todayData.feeding}ml</Text>
           <Text style={styles.dataItem}>💤 {todayData.sleep.toFixed(1)}h</Text>
-          <Text style={styles.dataItem}>💩 {todayData.diaper}x 😢 {todayData.cry}min</Text>
+          <Text style={styles.dataItem}>🧷 {todayData.diaper}x 😢 {todayData.cry}min</Text>
         </View>
       </View>
     </View>
@@ -94,7 +109,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,     // ↓ from 16 → 12
     paddingHorizontal: 14,   // ↓ slightly
     marginHorizontal: 16,
-    marginTop: 12,           // ↓ from 16
+    marginTop: 8,           // ↓ from 16
     shadowColor: '#000',
     shadowOpacity: 0.08,
     shadowOffset: { width: 0, height: 4 },
@@ -145,5 +160,9 @@ const styles = StyleSheet.create({
       ios: 'AvenirNextRounded-Regular',
       android: 'sans-serif-light',
     }),
+  },
+  summaryScroll: {
+    maxHeight: 60,
+    minHeight: 5,
   },
 });

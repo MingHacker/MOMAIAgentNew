@@ -1,18 +1,21 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity } from 'react-native';
-import { momApi, MomHealthData } from '../src/api';
+import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity, ScrollView } from 'react-native';
+import { momApi, MomHealthData, MomSummaryResponse } from '../src/api';
 import { Platform } from 'react-native';
+
 
 export default function MomStatusCard() {
   const [loading, setLoading] = useState(true);
   const [healthData, setHealthData] = useState<MomHealthData | null>(null);
   const [error, setError] = useState<string | null>(null);
-
+  const [summaryData, setSummaryData] = useState<MomSummaryResponse | null>(null);
   const fetchHealthData = async () => {
     try {
       setLoading(true);
       const response = await momApi.getTodayHealth();
       console.log('Mom health response:', response);  // 添加日志
+      const summaryResponse = await momApi.getTodaySummary();
+      setSummaryData(summaryResponse);
 
       if (response.success && response.data) {
         console.log('Mom health data:', response.data);  // 添加日志
@@ -76,14 +79,16 @@ export default function MomStatusCard() {
       <View style={styles.row}>
         {/* 左边 mood */}
         <View style={styles.left}>
-          <Text style={styles.moodText}>
-            {healthData.mood === 'high' ? '😊 Feeling Great!' :
-             healthData.mood === 'medium' ? '😌 Feeling Good' :
-             healthData.mood === 'low' ? '😔 Taking it easy today' :
-             '😌 Hello there!'}
-          </Text>
+          <ScrollView 
+            style={styles.summaryScroll}
+            contentContainerStyle={{ flexGrow: 1, justifyContent: 'center' }}
+            showsVerticalScrollIndicator={true}
+          >
+            <Text style={styles.moodText}>
+              {summaryData?.summary || '🌸 Be gentle with yourself today'}
+            </Text>
+          </ScrollView>
         </View>
-
         {/* 右边垂直数据列表 */}
         <View style={styles.right}>
           <View style={styles.dataStack}>
@@ -117,11 +122,11 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
   },
   left: {
-    flex: 1.7,
-    paddingRight: 8,
+    flex: 2,
+    paddingRight: 12,
   },
   right: {
-    flex: 1,
+    flex: 1.1,
     alignItems: 'flex-end',
   },
   dataStack: {
@@ -164,5 +169,9 @@ const styles = StyleSheet.create({
     }),
     marginTop: 8,
     lineHeight: 18,
+  },
+  summaryScroll: {
+    maxHeight: 60,
+    minHeight: 5,
   },
 });

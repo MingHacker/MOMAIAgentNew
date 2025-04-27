@@ -645,7 +645,7 @@ interface TaskUpdate {
 interface Task {
   id: string;
   text: string;
-  type: 'Health' | 'Family' | 'Baby' | 'Other';
+  type: CategoryType;
   done: boolean;
   subTasks: SubTask[];
   title: string;
@@ -659,6 +659,7 @@ interface SubTask {
   id: string;
   text: string;
   done: boolean;
+  type: CategoryType;
 }
 
 // "建议子任务"的结构（包括是否被选中）
@@ -712,7 +713,8 @@ export const taskApi = {
           id: subTask.id,
           text: subTask.text,
           done: subTask.done,
-          main_task_id: task.id
+          main_task_id: task.id,
+          type: task.type || 'Other',
         }))
       };
 
@@ -823,6 +825,17 @@ export const taskApi = {
         category: 'Other',
         suggestions: [],
       };
+    }
+  },
+
+  getIncompleteTasks: async (): Promise<Task[]> => {
+    try {
+      const response = await axiosInstance.get('/api/task/incomplete');
+      console.log('✅ Fetched incomplete tasks:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('❌ Failed to fetch incomplete tasks:', error);
+      throw error;
     }
   },
 };

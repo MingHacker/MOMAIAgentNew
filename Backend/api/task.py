@@ -21,6 +21,24 @@ router = APIRouter()
 
 security = HTTPBearer()
 
+# Pydantic models for Task and SubTask (matching frontend interfaces)
+class SubTask(BaseModel):
+    id: str
+    text: str
+    done: bool
+
+class Task(BaseModel):
+    id: str
+    text: str
+    type: str
+    done: bool
+    subTasks: List[SubTask]
+    title: str
+    description: str
+    created_at: str
+    completed: bool
+
+
 # GPT 请求模型\ n
 class GPTTaskRequest(BaseModel):
     task_id: Optional[str] = None
@@ -43,6 +61,7 @@ class GPTTaskResponse(BaseModel):
 class TaskModel(BaseModel):
     id: str
     text: str
+    type: str
 
 class SaveTaskRequest(BaseModel):
     main_task: TaskModel
@@ -83,7 +102,7 @@ async def create_task_from_gpt(req: GPTTaskRequest = Body(...), user_id: str = D
     # 调用 runner 获取任务输出
     result = run_task_manager(req.model_dump())
     task_output = result["task_output"]
-    category = task_output["category"]
+    category = detect_task_category(req.input_text)
     tasks = task_output["tasks"]
 
     if not isinstance(tasks, list) or not tasks:
@@ -102,8 +121,6 @@ async def create_task_from_gpt(req: GPTTaskRequest = Body(...), user_id: str = D
 @router.post("/api/task/save")
 def save_task(request: SaveTaskRequest, user_id: str = Depends(get_current_user)):
     now = datetime.now(timezone.utc).isoformat()
-    category = detect_task_category(request.main_task.text)
-
         # 👉 Insert main task and get generated task_id
     main_insert = supabase.client.table("tasks").upsert({
         "task_id": request.main_task.id,
@@ -111,7 +128,7 @@ def save_task(request: SaveTaskRequest, user_id: str = Depends(get_current_user)
         "title": request.main_task.text,
         "status": "pending",
         "priority": "medium",
-        "category": category,
+        "category": request.main_task.type,
         "created_at": now
     }).execute()
 
@@ -126,7 +143,8 @@ def save_task(request: SaveTaskRequest, user_id: str = Depends(get_current_user)
         "status": "pending",
         "priority": "medium",
         "created_at": now,
-        "parent_id": main_task_id
+        "parent_id": main_task_id,
+        "category": request.main_task.type
     } for sub in request.sub_tasks]
 
     # ✅ Batch insert in one request
@@ -152,3 +170,43 @@ def update_task_status(task):
         update_data["complete_date"] = datetime.utcnow().isoformat()
 
     return supabase.client.table("tasks").update(update_data).eq("task_id", task.id).execute()
+
+@router.get("/api/task/incomplete", response_model=List[Task])
+async def get_incomplete_tasks(user_id: str = Depends(get_current_user)):
+    """
+    Get all incomplete tasks and their subtasks for the current user.
+    """
+    # Fetch main tasks that are not completed and belong to the user
+    main_tasks_response = supabase.client.table("tasks").select("*").eq("mom_id", user_id).neq("status", "completed").is_("parent_id", None).execute()
+    main_tasks_data = main_tasks_response.data
+
+    incomplete_tasks: List[Task] = []
+
+    for main_task in main_tasks_data:
+        # Fetch subtasks for the current main task that are not completed
+        subtasks_response = supabase.client.table("tasks").select("*").eq("parent_id", main_task["task_id"]).neq("status", "completed").execute()
+        subtasks_data = subtasks_response.data
+
+        subtasks_list: List[SubTask] = [
+            SubTask(
+                id=subtask["task_id"],
+                text=subtask["title"],
+                done=subtask["status"] == "completed"
+            ) for subtask in subtasks_data
+        ]
+
+        incomplete_tasks.append(
+            Task(
+                id=main_task["task_id"],
+                text=main_task["title"],
+                type=main_task["category"], # Assuming 'category' field exists in your tasks table
+                done=main_task["status"] == "completed",
+                subTasks=subtasks_list,
+                title=main_task["title"],
+                description=main_task.get("description", ""), # Assuming 'description' field might exist
+                created_at=main_task["created_at"],
+                completed=main_task["status"] == "completed"
+            )
+        )
+
+    return incomplete_tasks

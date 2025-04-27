@@ -7,7 +7,7 @@ import { createDrawerNavigator, DrawerItem } from '@react-navigation/drawer';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import { TouchableOpacity } from 'react-native';
+import { TouchableOpacity, View, Text, StyleSheet } from 'react-native';
 import { navigationStyles } from './styles/navigation';
 import 'react-native-gesture-handler';
 import 'react-native-reanimated';
@@ -26,6 +26,7 @@ import WelcomeScreen from './screens/WelcomeScreen';
 import BabyProfileScreen from './screens/BabyProfileScreen';
 import RecommendedFeaturesScreen from './screens/RecommandFeatureScreen';
 import TimelineScreen from './screens/TimelineScreen';
+import GrowthChartScreen from './screens/GrowthChartScreen';
 import { Alert } from 'react-native';
 
 type AuthContextType = {
@@ -140,7 +141,7 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
   const handleLogout = () => {
     Alert.alert(
       'Logout',
-      'Are you sure you want to log out?',
+      'Are you sure you want to logout?',
       [
         { text: 'Cancel', style: 'cancel' },
         {
@@ -148,8 +149,8 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
           style: 'destructive',
           onPress: async () => {
             try {
-              await api.logout(); // 清除 supabase 和 token
-              await logout();     // 触发上下文状态更新
+              await api.logout();
+              await logout();
             } catch (e) {
               console.error('Logout error:', e);
             }
@@ -163,17 +164,61 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
   return (
     <DrawerContentScrollView {...props}>
       <DrawerItemList {...props} />
-      <DrawerItem
-        label="Logout"
-        onPress={handleLogout}
-        icon={({ color, size }) => (
-          <Ionicons name="log-out-outline" size={size} color={color} />
-        )}
-        labelStyle={{ color: '#EF4444', marginLeft: -16 }}
-      />
+      
+      {/* 添加分隔线 */}
+      <View style={styles.drawerDivider} />
+      
+      {/* 登出按钮 - 英文文本 */}
+      <View style={styles.logoutSection}>
+        <TouchableOpacity 
+          style={styles.logoutButton}
+          onPress={handleLogout}
+        >
+          <Ionicons 
+            name="log-out-outline" 
+            size={24} 
+            color="#666666" 
+            style={styles.logoutIcon}
+          />
+        </TouchableOpacity>
+        <Text style={styles.logoutText}>Logout</Text>
+      </View>
     </DrawerContentScrollView>
   );
 }
+
+// 更新样式，使用更柔和的颜色
+const styles = StyleSheet.create({
+  drawerDivider: {
+    height: 1,
+    backgroundColor: '#E5E7EB',
+    marginVertical: 15,
+    marginHorizontal: 15,
+  },
+  logoutSection: {
+    marginTop: 5,
+    alignItems: 'center',
+    paddingHorizontal: 15,
+  },
+  logoutButton: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: '#F3F4F6', // 更柔和的背景色
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  logoutIcon: {
+    opacity: 0.8, // 添加一点透明度使图标更柔和
+  },
+  logoutText: {
+    fontSize: 14,
+    fontWeight: '400', // 减小字重
+    color: '#666666', // 更柔和的文字颜色
+    textAlign: 'center',
+  },
+});
 
 function DrawerNavigator() {
   return (
@@ -238,6 +283,16 @@ function DrawerNavigator() {
           title: 'Feature Card',
           drawerIcon: ({ focused, color, size }) => (
             <Ionicons name={focused ? 'star' : 'star-outline'} size={18} color={color} />
+          )
+        }} 
+      />
+      <Drawer.Screen 
+        name="GrowthChart" 
+        component={GrowthChartScreen} 
+        options={{ 
+          title: 'Growth Chart',
+          drawerIcon: ({ focused, color, size }) => (
+            <Ionicons name={focused ? 'trending-up' : 'trending-up-outline'} size={18} color={color} />
           )
         }} 
       />

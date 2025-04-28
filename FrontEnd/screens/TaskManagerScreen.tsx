@@ -211,6 +211,10 @@ export default function TaskManagerScreen() {
       prev.map((task) => {
         if (task.id === id) {
           const updated = { ...task, done: !task.done };
+          // If main task is marked as done, mark all subtasks as done
+          if (updated.done) {
+            updated.subTasks = updated.subTasks.map(sub => ({ ...sub, done: true }));
+          }
           taskApi.updateTaskStatus(updated.id, updated.subTasks, updated.done); // Use taskApi
           return updated;
         }
@@ -226,8 +230,10 @@ export default function TaskManagerScreen() {
           const updatedSubs = task.subTasks.map((st) =>
             st.id === subTaskId ? { ...st, done: !st.done } : st
           );
-          taskApi.updateTaskStatus(taskId, updatedSubs, task.done); // Use taskApi
-          return { ...task, subTasks: updatedSubs };
+          const allSubTasksDone = updatedSubs.every(sub => sub.done);
+          const updatedTask = { ...task, subTasks: updatedSubs, done: allSubTasksDone };
+          taskApi.updateTaskStatus(updatedTask.id, updatedTask.subTasks, updatedTask.done); // Use taskApi
+          return updatedTask;
         }
         return task;
       })

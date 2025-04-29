@@ -111,8 +111,8 @@ export default function MomDashboardSentence() {
         onesentence: summary?.onesentence || '',
         liked: true,
       });
-    } catch (e) {
-      console.error('Failed to send like:', e);
+    // } catch (e) {
+    //   console.error('Failed to send like:', e);
     } finally {
       setShowOptions(false);
     }

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -11,16 +11,33 @@ import {
   Image,
   TouchableWithoutFeedback,
   Keyboard,
+  Dimensions,
 } from 'react-native';
 import { ImageBackground } from 'react-native';
 import { api } from '../src/api';
 import { useAuth } from '../App';
 
+const windowWidth = Dimensions.get('window').width;
+const windowHeight = Dimensions.get('window').height;
+
+
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const { login } = useAuth();
-
+  const [dimensions, setDimensions] = useState({
+    width: windowWidth,
+    height: windowHeight,
+  });
+  useEffect(() => {
+    const subscription = Dimensions.addEventListener('change', ({ window }) => {
+      setDimensions({
+        width: window.width,
+        height: window.height,
+      });
+    });
+    return () => subscription?.remove();
+  }, []);
   const handleSubmit = async () => {
     try {
       const success = await api.login({ email, password });
@@ -32,6 +49,7 @@ export default function LoginScreen() {
     } catch (error) {
       Alert.alert('Error', 'Something went wrong');
     }
+
   };
 
   return (
@@ -39,10 +57,14 @@ export default function LoginScreen() {
       <KeyboardAvoidingView 
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.container}
+        
       >
         <ImageBackground
           source={require('../assets/backgroundwithicon3.png')}
-          style={styles.backgroundImage}
+          style={[styles.backgroundImage, {
+            width: dimensions.width,
+            height: dimensions.height,
+          }]}
           resizeMode="cover"
         >
           <View style={styles.content}>
@@ -93,6 +115,8 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    width: '100%',  // 确保宽度100%
+    height: '100%', // 确保高度100%
   },
   backgroundImage: {
     flex: 1,
@@ -113,7 +137,9 @@ const styles = StyleSheet.create({
   },
   topSection: {
     alignItems: 'center',
-    marginTop: '85%',
+    marginTop: '50%',  // 改为更合理的比例
+    flex: 1,          // 添加 flex
+    justifyContent: 'flex-end', // 确保内容靠下
   },
   logo: {
     width: 160,

@@ -157,7 +157,7 @@ The MOM AI Agent system uses a multi-agent architecture powered by LangGraph and
 
 ### Agent Components
 
-![alt text](ArchitectMomAI.png)
+![alt text](image.png)
 
 1. **Baby Manager Agent**
 
@@ -233,31 +233,3 @@ This project is licensed under the MIT License.
 ---
 
 # ✨ MOM AI Agent: Building Relief, Not Just Tools.
-
----
-
-[ HealthKit ]
-|
-v
-[ Mom Health Manager ]
-|
-v
-[ Emotional Manager ] <--- [ Baby Manager ] <--- [ Baby Logs ]
-
-       |
-       v
-
-+----------------------+
-| Decision Layer |
-| (Task Manager + |
-| Chat Agent) |
-+----------------------+
-|
-v
-+----------------------+
-| Action Layer |
-| (Notification + Chat + Voice) |
-+----------------------+
-|
-v
-[ User Feedback ] --> back to --> [ Emotional Manager ]

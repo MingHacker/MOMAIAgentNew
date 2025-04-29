@@ -1,67 +1,53 @@
 # MOM AI Agent
 
 > _Motherhood isn't a job — but it still deserves support._
+> It’s emotional labor. Mental exhaustion. A hundred tiny crises you handle alone.
 
-I'm an automation engineer and a mom of two. After having my second child while working full-time, I found myself overwhelmed — feedings, diapers, doctor appointments, emotional pressure — the invisible load of motherhood was untracked and unsupported.\
-**Mom AI Agent** was born from this real-world need: not another baby tracker, but a true AI-powered support system for moms.
+I'm an Automation Engineer. I'm a mom of two.
+I know how lonely it feels to hold it all together — feedings, diapers, crying fits, medical charts, career pressure — with no real support.
+
+Even after reclaiming my health, I realized:
+Moms don't need more advice. We need real, intelligent support.
+We need to be seen, not judged. Supported, not left alone.
 
 ---
 
 ## 🚨 The Problem
 
-- Every new mom juggles an avalanche of tasks: feedings, diapers, naps, doctor visits, emotional highs and lows.
-- 1 in 7 mothers experiences postpartum depression.
-- 60% of new families have both parents working.
-- Existing tools mainly track the baby — few support **mothers’ mental and physical health**.
-- **Motherhood is the most important — and most underestimated — role.**\
-  Today, there’s no unified, intelligent system to relieve the invisible overload moms carry daily.
+Every new mom juggles an avalanche of tasks: feeding, diapers, naps, doctor visits, emotional highs and lows.
+1 in 7 mothers experiences postpartum depression.
+60% of new families have both parents working.
+MOM is the most important role — and the most underestimated.
+Don’t underestimate the work of a mom.
+Let’s build tools that truly respect it. And a community where mom help each other
 
 ---
 
 ## 💡 The Solution: MOM AI Agent
 
-**MOM AI Agent** is an intelligent companion app, designed to act as a support team in your pocket. Powered by six specialized AI agents, it helps moms:
+MomAI Agent is not just a baby tracker.It’s not just a health app.
+**It's an emotional companion. A personal support team. A gentle community**
 
-- 🍼 **Track** feedings, diapers, sleep cycles, and automatically monitor baby’s crying minutes
-- 📈 **Sync with HealthKit** to track HRV and stress levels for both MOM & BABY
-- 💬 **Receive emotional nudges** and mental health check-ins
-- 📋 **Manage daily tasks** through a smart Task Manager Agent
-- 🧠 **Get instant parenting and policy answers** via Q&A agent
-- 🎙️ **Real-time AI chatbot** support with text and voice-based interaction
+Built by a mother, for mothers.
+Powered by six specialized AI agents working together.
+
+📈 Mom Health Manager: HRV, stress, sleep tracking. Period tracking. Gentle health nudges.
+🍼 Baby Manager: Feeding, diaper, sleep logs. Cry detection.
+🧠 Emotional Manager: Mood tracking, emotional check-ins, soft nudges for mental health.
+📋 Task Manager: Daily parenting + home tasks, smart priority reminders.
+🗣️ Chat Agent: Real-time Q&A, personalized based on your and your baby's data.
+🎙️ Voice Interaction (coming soon): Hands-free emotional support.
+
+✨ New Life Features
+📚 Timeline Story: Watch your motherhood journey unfold — tiny milestones, tender moments, everyday victories.
+🏡 Family Events Nearby: Discover family-friendly events around you — no endless searching.
+👭 Mom Community (Future): Connect, share, and gently support each other. Not competition — real companionship.
 
 **Our vision**:\
 A future where no mom feels alone or overwhelmed, where technology anticipates her needs and offers real support — intelligently, gently, and holistically.
 
----
-
-## 🎯 Market Opportunity
-
-- \$46B+ in annual millennial parenting spending.
-- Existing apps target either **baby tracking** or **fitness** — very few address **motherhood + emotional wellbeing + AI**.
-- Moms today are **tech-savvy**, **data-aware**, and **deeply underserved**.
-
 > **AI is ready. Moms are not okay.**\
 > **The moment is now — and we must move fast.**
-
----
-
-## 🧐 Key Features
-
-- **Baby Manager Agent**: Feedings, diaper logs, sleep tracking, cry detection.
-- **Mom Health Agent**: HRV, stress levels, breathing rate, sleep tracking.
-- **Emotional Companion Agent**: Mood tracking, stress analysis, gentle emotional messaging.
-- **Task Manager Agent**: Parenting and home task generation, reminders, and prioritization.
-- **Chat Agent**: Real-time Q&A based on baby and mom health data.
-- **Voice Interaction**: Future voice-based emotional support.
-
----
-
-## 🏗️ Product Status
-
-- 🎨 Figma prototype: ✅ Completed
-- 🛠️ Core AI agents: 🏗️ Building (Baby Manager, Health Monitor, Q&A, Emotion Tracker)
-- 📋 Microsoft Hackathon Entry: ✅ April 2025
-- 📱 iOS MVP Launch: Planned for May 2025
 
 ---
 
@@ -171,6 +157,8 @@ The MOM AI Agent system uses a multi-agent architecture powered by LangGraph and
 
 ### Agent Components
 
+![alt text](ArchitectMomAI.png)
+
 1. **Baby Manager Agent**
 
    - Tracks baby activities (feeding, diaper, sleep, crying)
@@ -247,3 +235,29 @@ This project is licensed under the MIT License.
 # ✨ MOM AI Agent: Building Relief, Not Just Tools.
 
 ---
+
+[ HealthKit ]
+|
+v
+[ Mom Health Manager ]
+|
+v
+[ Emotional Manager ] <--- [ Baby Manager ] <--- [ Baby Logs ]
+
+       |
+       v
+
++----------------------+
+| Decision Layer |
+| (Task Manager + |
+| Chat Agent) |
++----------------------+
+|
+v
++----------------------+
+| Action Layer |
+| (Notification + Chat + Voice) |
++----------------------+
+|
+v
+[ User Feedback ] --> back to --> [ Emotional Manager ]

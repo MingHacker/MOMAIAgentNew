@@ -14,6 +14,8 @@ export const axiosInstance = axios.create({
   },
 });
 
+console.log('API_BASE_URL:', API_BASE_URL); 
+
 // Add JWT token to requests
 axiosInstance.interceptors.request.use(async (config) => {
   const token = await AsyncStorage.getItem('access_token');

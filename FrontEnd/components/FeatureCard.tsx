@@ -1,5 +1,5 @@
 // FeatureCard.tsx
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
@@ -13,6 +13,8 @@ type FeatureCardProps = {
 };
 
 const FeatureCard = ({ featureId, reminderTime, reminderType, dailySummary }: FeatureCardProps) => {
+  const [cardColor, setCardColor] = useState('#F9F7FF'); // Default color
+
   let displayText = '';
   let timeDiffText = '';
 
@@ -22,13 +24,32 @@ const FeatureCard = ({ featureId, reminderTime, reminderType, dailySummary }: Fe
     displayText = featureId.title || featureId.id;
   }
 
+  useEffect(() => {
+    if (reminderTime && reminderType !== 'outside') {
+      const reminderDateTime = dayjs(reminderTime);
+      const now = dayjs();
+      const diffInHours = reminderDateTime.diff(now, 'hour');
+
+      if (reminderDateTime.isBefore(now)) {
+        setCardColor('#FFCDD2'); // Mild Red (Past)
+      } else if (diffInHours > 1) {
+        setCardColor('#C8E6C9'); // Mild Green (More than 1 hour in future)
+      } else {
+        setCardColor('#FFF9C4'); // Mild Yellow (Less than 1 hour in future)
+      }
+      timeDiffText = reminderDateTime.fromNow();
+    }
+  }, [reminderTime, reminderType]);
+
+
   if (reminderTime && reminderType !== 'outside') {
     const reminderDateTime = dayjs(reminderTime);
     timeDiffText = reminderDateTime.fromNow();
   }
 
+
   return (
-    <View style={styles.card}>
+    <View style={[styles.card, { backgroundColor: cardColor }]}>
       <Text style={styles.text}>{displayText}</Text>
       {timeDiffText ? <Text style={styles.time}>{timeDiffText}</Text> : null}
       {dailySummary && reminderType && (
@@ -66,7 +87,6 @@ const FeatureCard = ({ featureId, reminderTime, reminderType, dailySummary }: Fe
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: '#F9F7FF',
     borderRadius: 16,
     width: '48%',
     padding: 20,

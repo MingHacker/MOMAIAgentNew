@@ -9,7 +9,6 @@ import {
   KeyboardAvoidingView,
   Platform,
   Image,
-  TouchableWithoutFeedback,
   Keyboard,
 } from 'react-native';
 import { ImageBackground } from 'react-native';
@@ -35,58 +34,56 @@ export default function LoginScreen() {
   };
 
   return (
-    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-      <KeyboardAvoidingView 
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={styles.container}
+    <KeyboardAvoidingView
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      style={[styles.container, Platform.OS === 'web' && { height: '100%', width: '100%' }]}
+    >
+      <ImageBackground
+        source={require('../assets/backgroundwithicon3.png')}
+        style={styles.backgroundImage}
+        resizeMode="stretch"
       >
-        <ImageBackground
-          source={require('../assets/backgroundwithicon3.png')}
-          style={styles.backgroundImage}
-          resizeMode="cover"
-        >
-          <View style={styles.content}>
-            <View style={styles.topSection}>
-              <Image
-                //source={require('../assets/loginicon4.png')}
-                //style={styles.logo}
-              />
-            </View>
+        <View style={styles.content}>
+          <View style={styles.topSection}>
+            <Image
+              //source={require('../assets/loginicon4.png')}
+              //style={styles.logo}
+            />
+          </View>
 
-            <View style={styles.whiteBackground}>
-              <View style={styles.middleSection}>
-                <View style={styles.formContainer}>
-                  <TextInput
-                    placeholder="Email"
-                    placeholderTextColor="#A1A1A1"
-                    style={styles.input}
-                    value={email}
-                    onChangeText={setEmail}
-                    keyboardType="email-address"
-                    autoCapitalize="none"
-                    returnKeyType="next"
-                  />
-                  <TextInput
-                    placeholder="Password"
-                    placeholderTextColor="#A1A1A1"
-                    style={styles.input}
-                    value={password}
-                    onChangeText={setPassword}
-                    secureTextEntry
-                    returnKeyType="done"
-                    onSubmitEditing={handleSubmit}
-                  />
+          <View style={styles.whiteBackground}>
+            <View style={styles.middleSection}>
+              <View style={styles.formContainer}>
+                <TextInput
+                  placeholder="Email"
+                  placeholderTextColor="#A1A1A1"
+                  style={styles.input}
+                  value={email}
+                  onChangeText={setEmail}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  returnKeyType="next"
+                />
+                <TextInput
+                  placeholder="Password"
+                  placeholderTextColor="#A1A1A1"
+                  style={styles.input}
+                  value={password}
+                  onChangeText={setPassword}
+                  secureTextEntry
+                  returnKeyType="done"
+                  onSubmitEditing={handleSubmit}
+                />
 
-                  <TouchableOpacity style={styles.button} onPress={handleSubmit}>
-                    <Text style={styles.buttonText}>Log in</Text>
-                  </TouchableOpacity>
-                </View>
+                <TouchableOpacity style={styles.button} onPress={handleSubmit}>
+                  <Text style={styles.buttonText}>Log in</Text>
+                </TouchableOpacity>
               </View>
             </View>
           </View>
-        </ImageBackground>
-      </KeyboardAvoidingView>
-    </TouchableWithoutFeedback>
+        </View>
+      </ImageBackground>
+    </KeyboardAvoidingView>
   );
 }
 
@@ -96,6 +93,11 @@ const styles = StyleSheet.create({
   },
   backgroundImage: {
     flex: 1,
+    ...Platform.select({
+      web: {
+        width: '100%',
+      },
+    }),
   },
   content: {
     flex: 1,

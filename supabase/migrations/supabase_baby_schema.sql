@@ -55,3 +55,19 @@ CREATE TABLE IF NOT EXISTS events_history (
     occurred_at TIMESTAMPTZ DEFAULT NOW(),
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- Table : events
+create table events (
+  id uuid primary key default gen_random_uuid(),
+  title text not null,
+  description text,
+  event_type text,
+  start_time timestamptz not null,
+  end_time timestamptz,
+  latitude double precision,
+  longitude double precision,
+  source text,
+  external_id text,
+  created_at timestamptz default now(),
+  updated_at timestamptz default now()
+);

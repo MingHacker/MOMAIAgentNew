@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -9,11 +9,15 @@ import {
   ScrollView,
   Platform,
   KeyboardAvoidingView,
+  Alert,
 } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { format } from 'date-fns';
+import { api } from '../src/api';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import axios from 'axios';
 
 interface BabyProfile {
   name: string;
@@ -33,8 +37,8 @@ export default function BabyProfileScreen() {
     height: '',
     avatar: null,
   });
-
   const [showDatePicker, setShowDatePicker] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const handleDateChange = (event: any, selectedDate?: Date) => {
     setShowDatePicker(false);
@@ -56,9 +60,52 @@ export default function BabyProfileScreen() {
     }
   };
 
-  const handleSave = () => {
-    // TODO: Implement API call to save baby profile
-    console.log('Baby profile saved:', baby);
+  const handleSave = async () => {
+    try {
+      setLoading(true);
+      const babyId = await AsyncStorage.getItem('baby_id');
+      if (!babyId) {
+        Alert.alert('Error', 'No baby ID found');
+        return;
+      }
+      
+      // 转换数据格式
+      const profileData = {
+        name: baby.name,
+        birth_date: baby.birthDate.toISOString().split('T')[0],
+        gender: baby.gender,
+        birth_weight: Number(baby.weight),
+        birth_height: Number(baby.height)
+      };
+      
+      console.log('Saving baby profile with data:', {
+        babyId,
+        profileData
+      });
+      
+      const response = await api.updateBabyProfile(babyId, profileData);
+      if (response && response.id) {
+        Alert.alert('Success', 'Profile updated successfully');
+      } else {
+        Alert.alert('Error', 'Failed to update profile');
+      }
+    } catch (error) {
+      console.error('Error saving baby profile:', error);
+      if (axios.isAxiosError(error) && error.response) {
+        const errorData = error.response.data;
+        console.error('Error response data:', errorData);
+        if (errorData.detail && Array.isArray(errorData.detail)) {
+          const errorMessage = errorData.detail.map((err: any) => err.msg || err.message).join('\n');
+          Alert.alert('Error', errorMessage || 'Failed to update profile');
+        } else {
+          Alert.alert('Error', 'Failed to update profile');
+        }
+      } else {
+        Alert.alert('Error', 'Failed to update profile');
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -180,8 +227,14 @@ export default function BabyProfileScreen() {
           </View>
         </View>
 
-        <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
-          <Text style={styles.saveButtonText}>Save Profile</Text>
+        <TouchableOpacity 
+          style={[styles.saveButton, loading && styles.saveButtonDisabled]} 
+          onPress={handleSave}
+          disabled={loading}
+        >
+          <Text style={styles.saveButtonText}>
+            {loading ? 'Saving...' : 'Save Profile'}
+          </Text>
         </TouchableOpacity>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -300,5 +353,8 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '600',
+  },
+  saveButtonDisabled: {
+    opacity: 0.7,
   },
 });

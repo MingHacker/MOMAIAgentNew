@@ -2,16 +2,15 @@
 
 import os
 from fastapi import APIRouter, Query, Depends, HTTPException, status
-from pydantic import BaseModel
+from pydantic import BaseModel, validator
 from agents.babymanager.schema import BabyAgentState
 from agents.babymanager.graph import build_baby_manager_graph
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 from typing import Dict, List
 import jwt
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from typing import Dict, Any
 from supabase import Client
-from datetime import datetime
 from fastapi.responses import JSONResponse
 from agents.baby_manager import get_baby_health_today
 from core.supabase import get_supabase
@@ -39,10 +38,41 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid authentication credentials",
         )
+class BabyProfileUpdate(BaseModel):
+    name: str
+    birth_date: str
+    gender: str
+    birth_weight: float
+    birth_height: float
 
+    @validator('birth_date')
+    def validate_date(cls, v):
+        try:
+            # 尝试解析日期字符串
+            date.fromisoformat(v)
+            return v
+        except ValueError:
+            raise ValueError('Invalid date format. Use YYYY-MM-DD')
+    
 class BabyAnalysisResponse(BaseModel):
     summary: str
     next_action: str
+    
+@router.put("/api/baby/updateprofile", status_code=status.HTTP_200_OK)
+async def update_baby_profile(baby_id: str, profile: BabyProfileUpdate, user_id: str = Depends(get_current_user)):
+    try:
+        print("Received profile data:", profile.model_dump())  # 打印接收到的数据
+        print("Baby ID:", baby_id)  # 打印 baby_id
+        print("User ID:", user_id)  # 打印 user_id
+        
+        # 更新宝宝资料
+        result = supabase.client.from_("baby_profiles").update(profile.model_dump()).eq("id", baby_id).execute()
+        print("Update result:", result)  # 打印更新结果
+        return {"success": True, "data": result.data}
+    except Exception as e:
+        print("Error updating baby profile:", str(e))  # 打印具体错误
+        print("Error type:", type(e))  # 打印错误类型
+        return {"success": False, "summary": str(e)}
     
 
 

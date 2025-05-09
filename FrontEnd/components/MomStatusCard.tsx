@@ -74,9 +74,9 @@ export default function MomStatusCard() {
     <View style={styles.card}>
       <View style={styles.row}>
         <View style={styles.left}>
-          <Text style={styles.moodText}>
+            <Text style={styles.moodText}>
             🌸 Be gentle with yourself today
-          </Text>
+            </Text>
         </View>
         <View style={styles.right}>
           {healthData?.hrv && healthData.hrv > 0 && (

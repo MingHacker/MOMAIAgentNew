@@ -35,6 +35,18 @@ def serialize_datetime(obj):
 
 load_dotenv()
 
+# --- Elasticsearch Client Setup ---
+from elasticsearch import Elasticsearch
+es = Elasticsearch(os.getenv("ELASTICSEARCH_URL"))
+from elasticsearch.exceptions import ConnectionError
+
+es = Elasticsearch(os.getenv("ELASTICSEARCH_URL"))
+
+if not es.ping():
+    raise ConnectionError("Elasticsearch connection failed. Please check your configuration.")
+else:
+    print("Elasticsearch connection successful.")
+
 # --- Global Variables (Initialized in Lifespan) ---
 supabase: Client = None
 agent: BabyAIAgent = None

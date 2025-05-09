@@ -3,8 +3,14 @@ import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity, Platform, 
 import { babyApi, BabyRawDataResponse, BabySummaryResponse } from '../src/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import dayjs from 'dayjs';
+import { useNavigation } from '@react-navigation/native';
 
-export default function BabyStatusCard() {
+interface BabyStatusCardProps {
+  onStartRecording: () => void;
+}
+
+export default function BabyStatusCard({ onStartRecording }: BabyStatusCardProps) {
+  const navigation = useNavigation();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [dailyData, setDailyData] = useState<BabyRawDataResponse | null>(null);
@@ -55,10 +61,24 @@ export default function BabyStatusCard() {
   if (error || !dailyData?.success) {
     return (
       <View style={styles.card}>
-        <Text style={styles.summaryText}> No data available today</Text>
-        <TouchableOpacity style={styles.refreshButton} onPress={fetchBabyData}>
-          <Text style={styles.refreshText}>Refresh</Text>
-        </TouchableOpacity>
+        <View style={styles.row}>
+          <View style={styles.left}>
+            <Text style={styles.summaryText}>
+              ✨ Let's capture ✨{'\n'}
+              <Text style={styles.fallbackText}>
+                Every smile, every milestone, every tiny achievement...
+              </Text>
+            </Text>
+          </View>
+          <View style={styles.right}>
+            <TouchableOpacity 
+              style={styles.recordButton} 
+              onPress={onStartRecording}
+            >
+              <Text style={styles.recordButtonText}>+</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
       </View>
     );
   }
@@ -147,19 +167,33 @@ const styles = StyleSheet.create({
     }),
     marginBottom: 4,
   },
-  refreshButton: {
-    marginTop: 10,
-    padding: 4,
-    backgroundColor: '#EDE9FE',
-    borderRadius: 4,
-  },
-  refreshText: {
+  fallbackText: {
+    fontSize: 13,
     color: '#8B5CF6',
-    fontSize: 12,
     fontFamily: Platform.select({
       ios: 'AvenirNextRounded-Regular',
       android: 'sans-serif-light',
     }),
+    marginTop: 4,
+    lineHeight: 18,
+  },
+  recordButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#F3F0FF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOpacity: 0.04,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 4,
+  },
+  recordButtonText: {
+    color: '#8B5CF6',
+    fontSize: 22,
+    fontWeight: 'bold',
+    lineHeight: 24,
   },
   summaryScroll: {
     maxHeight: 60,

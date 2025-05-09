@@ -15,8 +15,12 @@ import {
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import axios from 'axios';
-import { OPENAI_API_KEY } from '@env';
-import { SafeAreaView } from 'react-native-safe-area-context'; // Import SafeAreaView
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { qaApi } from '../src/api';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { API_BASE_URL } from '@env';
+
+console.log('API_BASE_URL:', API_BASE_URL);
 
 export default function QAScreen() {
   const [question, setQuestion] = useState('');
@@ -25,7 +29,7 @@ export default function QAScreen() {
   const [imageBase64, setImageBase64] = useState<string | null>(null);
   const [imageUri, setImageUri] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
-
+  const [qaHistory, setQaHistory] = useState([]);
   const pickImage = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
@@ -40,47 +44,19 @@ export default function QAScreen() {
     }
   };
 
-  const askOpenAIVision = async () => {
+  const handleAsk = async () => {
     if (!question.trim()) return;
     setLoading(true);
     try {
-      const res = await axios.post(
-        'https://api.openai.com/v1/chat/completions',
-        {
-          model: 'gpt-4o',
-          messages: [
-            {
-              role: 'user',
-              content: [
-                ...(imageBase64
-                  ? [
-                      {
-                        type: 'image_url',
-                        image_url: {
-                          url: `data:image/jpeg;base64,${imageBase64}`,
-                        },
-                      },
-                    ]
-                  : []),
-                { type: 'text', text: question },
-              ],
-            },
-          ],
-          max_tokens: 1000,
-        },
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${OPENAI_API_KEY}`,
-          },
-        }
-      );
-      const reply = res.data.choices[0].message.content;
-      setAnswer(reply);
-      setSubmitted(true);
-    } catch (err) {
-      console.error(err);
-      setAnswer('Something went wrong. Please try again.');
+      const data = await qaApi.askQuestion(question, imageBase64 || undefined);
+      if (data && data.answer) {
+        setAnswer(data.answer);
+        setSubmitted(true);
+      } else {
+        setAnswer('Received invalid response from server.');
+      }
+    } catch (err: any) {
+      setAnswer(`Error: ${err?.response?.data?.detail || err.message || 'Something went wrong.'}`);
     } finally {
       setLoading(false);
       setImageBase64(null);
@@ -109,6 +85,7 @@ export default function QAScreen() {
             <View style={styles.chatBubbleWrap}>
               {submitted && answer !== '' && (
                 <View style={styles.answerBubble}>
+                  {imageUri && <Image source={{ uri: imageUri }} style={styles.preview} />}
                   <Text style={styles.answerText}>{answer}</Text>
                 </View>
               )}
@@ -138,12 +115,11 @@ export default function QAScreen() {
                 <TouchableOpacity onPress={pickImage} style={styles.iconButton}>
                   <Text style={styles.iconButtonText}>＋ Image</Text>
                 </TouchableOpacity>
-                <TouchableOpacity onPress={askOpenAIVision} style={styles.sendButtonSoft}>
+                <TouchableOpacity onPress={handleAsk} style={styles.sendButtonSoft}>
                   <Text style={styles.sendButtonSoftText}>Submit</Text>
                 </TouchableOpacity>
               </View>
 
-              {imageUri && <Image source={{ uri: imageUri }} style={styles.preview} />}
               {loading && <ActivityIndicator size="large" color="#999" style={{ marginTop: 20 }} />}
             </View>
           </ScrollView>
@@ -242,7 +218,7 @@ const styles = StyleSheet.create({
     width: '100%',
     height: 200,
     borderRadius: 12,
-    marginTop: 16,
+    marginBottom: 16,
   },
   chatBubbleWrap: {
     marginBottom: 16,

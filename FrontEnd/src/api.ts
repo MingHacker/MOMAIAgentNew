@@ -14,7 +14,7 @@ export const axiosInstance = axios.create({
   },
 });
 
-console.log('API_BASE_URL:', API_BASE_URL); 
+//console.log('API_BASE_URL:', API_BASE_URL); 
 
 // Add JWT token to requests
 axiosInstance.interceptors.request.use(async (config) => {
@@ -446,9 +446,12 @@ export const momApi = {
   getWeeklyHealth: async (): Promise<MomHealthResponse> => {
     try {
       const res = await axiosInstance.get<MomHealthResponse>('/api/mom/health/weekly');
+      if (!res.data || !res.data.data) {
+        return { success: true, data: [] };
+      }
       return res.data;
     } catch (error) {
-      handleApiError(error);
+      console.error('获取妈妈每周健康数据失败:', error);
       return { success: false, data: [] };
     }
   },
@@ -842,4 +845,28 @@ export const taskApi = {
       throw error;
     }
   },
+};
+
+export const qaApi = {
+  askQuestion: async (question: string, imageBase64?: string) => {
+    try {
+      const response = await axiosInstance.post('/api/qa/ask', {
+        question,
+        image_base64: imageBase64
+      });
+      return response.data;
+    } catch (error) {
+      handleApiError(error);
+    }
+  },
+
+  getQaHistory: async () => {
+    try {
+      const response = await axiosInstance.get('/api/qa/history');
+      return response.data;
+    } catch (error) {
+      handleApiError(error);
+      return [];
+    }
+  }
 };

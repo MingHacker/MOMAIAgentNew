@@ -38,9 +38,9 @@ export const initHealthCache = async () => {
       await setHealthCache('baby_health', babyHealth.summary); // ✅ 使用 setDailyCache
     }
 
-    console.log('✅ 健康数据缓存完成');
+    console.log('✅ Health data cache completed');
   } catch (error) {
-    console.error('❌ 健康数据缓存失败:', error);
+    console.error('❌ Failed to cache health data:', error);
   }
 };
 
@@ -122,8 +122,8 @@ const DashboardScreen = () => {
 
   // 提交记录
   const submitDataRecordCallback = useCallback(async () => {
-    if (!selectedType) throw new Error('记录类型为空');
-    if (!babyInfo) throw new Error('宝宝信息为空');
+    if (!selectedType) throw new Error('Record type is empty');
+    if (!babyInfo) throw new Error('Baby info is empty');
 
     let logType: 'feeding' | 'diaper' | 'sleep' | 'outside';
     switch (selectedType) {
@@ -131,7 +131,7 @@ const DashboardScreen = () => {
       case 'sleep': logType = 'sleep'; break;
       case 'diaper': logType = 'diaper'; break;
       case 'outside': logType = 'outside'; break;
-      default: throw new Error('未知记录类型');
+      default: throw new Error('Unknown record type');
     }
 
     const log = {
@@ -147,7 +147,7 @@ const DashboardScreen = () => {
     submitDataRecordCallback,
     {
       onSuccess: () => {
-        Toast.show({ type: 'success', text1: '✅ 记录成功' });
+        Toast.show({ type: 'success', text1: '✅ Record successfully' });
         setModalVisible(false);
         setFormData({});
         if (babyInfo && selectedType) {
@@ -156,8 +156,8 @@ const DashboardScreen = () => {
         }
       },
       onError: (err) => {
-        console.error('提交出错：', err);
-        Toast.show({ type: 'error', text1: '❌ 提交失败', text2: err?.message || '请重试' });
+        console.error('Failed to submit:', err);
+        Toast.show({ type: 'error', text1: '❌ Failed to submit', text2: err?.message || 'Please try again' });
       },
       debounceTime: 1500,
     }
@@ -171,7 +171,7 @@ const DashboardScreen = () => {
       }
     } catch (error) {
       console.error('Failed to complete reminder:', error);
-      Toast.show({ type: 'error', text1: '❌ 完成提醒失败' });
+      Toast.show({ type: 'error', text1: '❌ Failed to complete reminder' });
     }
   };
 
@@ -179,7 +179,7 @@ const DashboardScreen = () => {
 
   const submitRecord = () => {
     if (!validateFormData(selectedType, formData)) {
-      Toast.show({ type: 'error', text1: '请填写完整信息 ✅' });
+      Toast.show({ type: 'error', text1: 'Please fill in all information ✅' });
       return;
     }
     submitDataRecord(formData);
@@ -217,7 +217,7 @@ const DashboardScreen = () => {
             return rows;
           }, [])
         ) : (
-          <Text style={{ textAlign: 'center', marginTop: 20 }}>暂无提醒</Text>
+          <Text style={{ textAlign: 'center', marginTop: 20 }}>No reminders</Text>
         )}
       </ScrollView>
 

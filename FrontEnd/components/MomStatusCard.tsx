@@ -63,11 +63,7 @@ export default function MomStatusCard() {
             <Text style={styles.moodText}>🌸 Be gentle with yourself today</Text>
           </View>
           <View style={styles.right}>
-            <View style={styles.dataStack}>
-              <Text style={styles.dataItem}>💓 HRV: --</Text>
-              <Text style={styles.dataItem}>💤 Sleep: --</Text>
-              <Text style={styles.dataItem}>🚶 Steps: --</Text>
-            </View>
+            {/* 移除显示 "--" 的部分 */}
           </View>
         </View>
       </View>
@@ -77,25 +73,21 @@ export default function MomStatusCard() {
   return (
     <View style={styles.card}>
       <View style={styles.row}>
-        {/* 左边 mood */}
         <View style={styles.left}>
-          <ScrollView 
-            style={styles.summaryScroll}
-            contentContainerStyle={{ flexGrow: 1, justifyContent: 'center' }}
-            showsVerticalScrollIndicator={true}
-          >
-            <Text style={styles.moodText}>
-              {summaryData?.summary || '🌸 Be gentle with yourself today'}
-            </Text>
-          </ScrollView>
+          <Text style={styles.moodText}>
+            🌸 Be gentle with yourself today
+          </Text>
         </View>
-        {/* 右边垂直数据列表 */}
         <View style={styles.right}>
-          <View style={styles.dataStack}>
+          {healthData?.hrv && healthData.hrv > 0 && (
             <Text style={styles.dataItem}>💓 HRV: {healthData.hrv}</Text>
-            <Text style={styles.dataItem}>💤 Sleep: {healthData.sleep_hours ? `${healthData.sleep_hours.toFixed(1)}h` : '0h'}</Text>
+          )}
+          {healthData?.sleep_hours && healthData.sleep_hours > 0 && (
+            <Text style={styles.dataItem}>💤 Sleep: {healthData.sleep_hours}h</Text>
+          )}
+          {healthData?.steps && healthData.steps > 0 && (
             <Text style={styles.dataItem}>🚶 Steps: {healthData.steps}</Text>
-          </View>
+          )}
         </View>
       </View>
     </View>

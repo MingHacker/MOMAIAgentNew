@@ -266,26 +266,28 @@ export default function HealthSummaryScreen() {
             </View>
 
             {/* Baby Cry Card */}
-            <View style={styles.card}>
-              <View style={styles.cardHeader}>
-                <Text style={styles.cardHeaderTitle}>Cry</Text>
-                <Text style={styles.cardHeaderSubtitle}>
-                  Today {babyData?.[6]?.cry_total_minutes ?? '--'} min</Text>
+            {babyData?.some(item => item?.cry_total_minutes && item.cry_total_minutes > 0) && (
+              <View style={styles.card}>
+                <View style={styles.cardHeader}>
+                  <Text style={styles.cardHeaderTitle}>Cry</Text>
+                  <Text style={styles.cardHeaderSubtitle}>
+                    Today {babyData?.[6]?.cry_total_minutes ?? '--'} min
+                  </Text>
+                </View>
+                <BarChart
+                  data={{
+                    labels: weekLabels,
+                    datasets: [
+                      { data: babyData?.map((item) => item.cry_total_minutes) ?? [0] },
+                    ],
+                  }}
+                  width={screenWidth * 0.9}
+                  height={150}
+                  chartConfig={chartConfig}
+                  style={styles.chartStyle}
+                />
               </View>
-
-              <BarChart
-                data={{
-                  labels: weekLabels,
-                  datasets: [
-                    { data: babyData?.map((item) => item.cry_total_minutes) ?? [0] },
-                  ],
-                }}
-                width={screenWidth * 0.9}
-                height={150}
-                chartConfig={chartConfig}
-                style={styles.chartStyle}
-              />
-            </View>
+            )}
 
         <Text style={styles.headerTitle}>MOM Summary</Text>
 

@@ -76,7 +76,7 @@ export default function BabyStatusCard({ onStartRecording }: BabyStatusCardProps
               onPress={onStartRecording}
             >
               <Text style={styles.recordButtonText}>+</Text>
-            </TouchableOpacity>
+        </TouchableOpacity>
           </View>
         </View>
       </View>

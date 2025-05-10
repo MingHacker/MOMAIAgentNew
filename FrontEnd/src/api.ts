@@ -77,6 +77,7 @@ interface ReminderCreate {
   notes?: string;
 }
 
+
 export interface Reminder extends ReminderCreate {
   id: string;
   is_completed: boolean;
@@ -93,6 +94,14 @@ interface HealthPrediction extends HealthPredictionCreate {
   id: string;
   user_id: string;
   predicted_on: string; // ISO format
+}
+
+interface BabyProfileUpdate {
+  name: string;
+  birth_date: string;
+  gender: string;
+  birth_weight: number;
+  birth_height: number;
 }
 
 // API Client
@@ -186,6 +195,24 @@ export const api = {
     }
   },
 
+  updateBabyProfile: async (babyId: string, profile: BabyProfileUpdate): Promise<BabyProfile> => {
+    try {
+      const response = await axiosInstance.put<BabyProfile>(
+        `/api/baby/updateprofile?baby_id=${babyId}`,
+        profile
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Error updating baby profile:', error);
+      if (axios.isAxiosError(error) && error.response) {
+        console.error('Response data:', error.response.data);
+        console.error('Response status:', error.response.status);
+        console.error('Response headers:', error.response.headers);
+      }
+      throw error;
+    }
+  },
+  
   // --- Baby Log Endpoints ---
   createBabyLog: async (log: BabyLogCreate): Promise<BabyLog> => {
     try {
